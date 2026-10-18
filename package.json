@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:rules": "npx firebase-tools emulators:exec --only firestore --project demo-ironlog \"vitest run --config vitest.rules.config.mts\"",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "rules:build": "node --env-file-if-exists=.env.local scripts/build-rules.mjs",
+    "icons": "node scripts/gen-icons.mjs",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",

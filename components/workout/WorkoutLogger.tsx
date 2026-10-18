@@ -1,7 +1,6 @@
 "use client";
 
 import { Clock, Flag, Plus, Trophy, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/components/providers/DataProvider";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -41,7 +40,6 @@ function writeJSON(key: string, v: unknown) {
 export function WorkoutLogger({ initial }: { initial: Workout }) {
   const data = useData();
   const toast = useToast();
-  const router = useRouter();
   const [w, setW] = useState<Workout>(() => {
     // Prefer the local backup if it's newer than what Firestore has.
     const backup = readJSON<Workout>(BACKUP_KEY);
@@ -278,8 +276,9 @@ export function WorkoutLogger({ initial }: { initial: Workout }) {
         putDoc(data.uid, "weeklyStats", stats.id, stats);
         writeJSON(BACKUP_KEY, null);
         writeJSON(REST_KEY, null);
+        // No navigation: offline it would need the network. Once the workout is
+        // completed, /entrenar re-renders into the session picker by itself.
         toast("Sesión guardada 💪", "success");
-        router.push("/");
       }} />
 
       <Sheet
@@ -299,7 +298,7 @@ export function WorkoutLogger({ initial }: { initial: Workout }) {
                 removeDoc(data.uid, "workouts", w.id);
                 writeJSON(BACKUP_KEY, null);
                 writeJSON(REST_KEY, null);
-                router.push("/");
+                setDiscarding(false);
               }}
             >
               Descartar
