@@ -75,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isDemo) {
       // Set after mount so nothing time-dependent renders during prerender.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(demoUser);
       setStatus("signed_in");
       return;

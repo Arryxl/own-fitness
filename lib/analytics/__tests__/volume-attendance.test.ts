@@ -88,3 +88,11 @@ describe("attendance", () => {
     expect(s.compliancePct).toBe(88); // 7 of 8 planned-to-date
   });
 });
+
+describe("attendance before the start date", () => {
+  it("does not count planned days before the user started", () => {
+    const weeks = weeklyAttendance({ plan: plan3, workouts: [], weekStarts: ["2026-10-05", "2026-10-12"], floatingByWeek: new Map(), today: "2026-10-18", startDate: "2026-10-14" });
+    expect(weeks[0].planned).toBe(0);
+    expect(weeks[1].planned).toBe(2); // Wed 14 and Fri 16
+  });
+});

@@ -44,12 +44,14 @@ export function weeklyAttendance(args: {
   weekStarts: string[];
   floatingByWeek: Map<string, number | null>;
   today: string;
+  /** Planned days before this date (when the user started) are not counted as missed. */
+  startDate?: string | null;
 }): WeekAttendance[] {
-  const { plan, workouts, weekStarts, floatingByWeek, today } = args;
+  const { plan, workouts, weekStarts, floatingByWeek, today, startDate } = args;
   const homeKeys = new Set(plan?.sessions.filter((s) => s.kind === "home").map((s) => s.key) ?? []);
   return weekStarts.map((ws) => {
     const key = isoWeekKey(ws);
-    const planned = plannedSessionsForWeek(plan, ws, floatingByWeek.get(key) ?? null);
+    const planned = plannedSessionsForWeek(plan, ws, floatingByWeek.get(key) ?? null).filter((p) => !startDate || p.date >= startDate);
     const end = addDays(ws, 6);
     const dates = new Set(
       workouts

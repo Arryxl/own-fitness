@@ -36,13 +36,13 @@ export function newId(uid: string, col: UserCollection): string {
 }
 
 /** Strip the `id` field: it's the document key, not data. */
-function body<T extends { id?: string }>(data: T): DocumentData {
-  const { id: _id, ...rest } = data;
+function body(data: object): DocumentData {
+  const { id: _id, ...rest } = data as { id?: string };
   void _id;
   return rest;
 }
 
-export function putDoc<T extends { id?: string }>(uid: string, col: UserCollection, id: string, data: T, merge = false): void {
+export function putDoc(uid: string, col: UserCollection, id: string, data: object, merge = false): void {
   if (isDemo) return demoPut(col, id, body(data), merge);
   setDoc(doc(getDb(), "users", uid, col, id), body(data), { merge }).catch(report);
 }

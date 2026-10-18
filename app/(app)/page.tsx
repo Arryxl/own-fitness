@@ -44,9 +44,9 @@ export default function TodayPage() {
 
   const week = useMemo(() => {
     const ws = weekStart(today);
-    const att = weeklyAttendance({ plan, workouts, weekStarts: lastWeekStarts(today, 8), floatingByWeek: weekPlans, today });
+    const att = weeklyAttendance({ plan, workouts, weekStarts: lastWeekStarts(today, 8), floatingByWeek: weekPlans, today, startDate: profile?.startDate });
     const current = att[att.length - 1];
-    const planned = plannedSessionsForWeek(plan, ws, floating);
+    const planned = plannedSessionsForWeek(plan, ws, weekPlans.get(weekKey) ?? null);
     const days = Array.from({ length: 7 }, (_, i) => {
       const date = addDays(ws, i);
       const sets = workouts
@@ -55,7 +55,7 @@ export default function TodayPage() {
       return { date, sets, planned: planned.some((p) => p.date === date) };
     });
     return { current, summary: summarizeAttendance(att), days };
-  }, [plan, workouts, weekPlans, today, floating]);
+  }, [plan, workouts, weekPlans, today, weekKey, profile?.startDate]);
 
   const weight = useMemo(() => {
     const ma = movingAverage7d(dailyMeans(data.bodyMetrics, "weightKg"));
