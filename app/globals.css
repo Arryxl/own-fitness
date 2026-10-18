@@ -1,0 +1,224 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens derived from design.jpg (see DESIGN.md):
+ * mint→peach backdrop, frosted cards, teal primary, coral accent.
+ * Text colors were darkened from the reference to reach WCAG AA.
+ */
+:root {
+  --bg: #eef5f1;
+  --bg-grad-a: #cfeee2;
+  --bg-grad-b: #fde4d6;
+  --surface: rgb(255 255 255 / 0.74);
+  --surface-strong: rgb(255 255 255 / 0.92);
+  --surface-sunken: rgb(20 60 50 / 0.05);
+  --border: rgb(20 60 50 / 0.09);
+  --text: #14302a;
+  --muted: #566b65;
+  --primary: #1f7d68;
+  --primary-strong: #17654f;
+  --primary-soft: #dcf1e9;
+  --on-primary: #ffffff;
+  --accent: #e8735a;
+  --accent-strong: #b84a33;
+  --accent-soft: #fde6de;
+  --on-accent: #ffffff;
+  --violet: #7b61d1;
+  --violet-soft: #ebe5fb;
+  --amber: #c27a12;
+  --amber-soft: #fbedd3;
+  --danger: #c0392b;
+  --danger-soft: #fbe3df;
+  --success: #1f7d68;
+  --ring-track: rgb(20 60 50 / 0.1);
+  --shadow: 0 1px 2px rgb(20 60 50 / 0.04), 0 8px 24px -12px rgb(20 60 50 / 0.18);
+  --chart-grid: rgb(20 60 50 / 0.08);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1614;
+    --bg-grad-a: #123329;
+    --bg-grad-b: #2b1d17;
+    --surface: rgb(26 38 35 / 0.72);
+    --surface-strong: rgb(30 44 41 / 0.94);
+    --surface-sunken: rgb(255 255 255 / 0.05);
+    --border: rgb(255 255 255 / 0.08);
+    --text: #e7f1ed;
+    --muted: #9fb3ad;
+    --primary: #4cc3a5;
+    --primary-strong: #6fd6bb;
+    --primary-soft: rgb(76 195 165 / 0.16);
+    --on-primary: #06231c;
+    --accent: #f5937d;
+    --accent-strong: #f5937d;
+    --accent-soft: rgb(245 147 125 / 0.15);
+    --on-accent: #2a0f08;
+    --violet: #a993f0;
+    --violet-soft: rgb(169 147 240 / 0.15);
+    --amber: #f0b552;
+    --amber-soft: rgb(240 181 82 / 0.15);
+    --danger: #f08a7e;
+    --danger-soft: rgb(240 138 126 / 0.15);
+    --success: #4cc3a5;
+    --ring-track: rgb(255 255 255 / 0.09);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -12px rgb(0 0 0 / 0.5);
+    --chart-grid: rgb(255 255 255 / 0.07);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0d1614;
+  --bg-grad-a: #123329;
+  --bg-grad-b: #2b1d17;
+  --surface: rgb(26 38 35 / 0.72);
+  --surface-strong: rgb(30 44 41 / 0.94);
+  --surface-sunken: rgb(255 255 255 / 0.05);
+  --border: rgb(255 255 255 / 0.08);
+  --text: #e7f1ed;
+  --muted: #9fb3ad;
+  --primary: #4cc3a5;
+  --primary-strong: #6fd6bb;
+  --primary-soft: rgb(76 195 165 / 0.16);
+  --on-primary: #06231c;
+  --accent: #f5937d;
+  --accent-strong: #f5937d;
+  --accent-soft: rgb(245 147 125 / 0.15);
+  --on-accent: #2a0f08;
+  --violet: #a993f0;
+  --violet-soft: rgb(169 147 240 / 0.15);
+  --amber: #f0b552;
+  --amber-soft: rgb(240 181 82 / 0.15);
+  --danger: #f08a7e;
+  --danger-soft: rgb(240 138 126 / 0.15);
+  --success: #4cc3a5;
+  --ring-track: rgb(255 255 255 / 0.09);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -12px rgb(0 0 0 / 0.5);
+  --chart-grid: rgb(255 255 255 / 0.07);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-sunken: var(--surface-sunken);
+  --color-line: var(--border);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 1.5rem;
+  --shadow-card: var(--shadow);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(60rem 40rem at -10% -10%, var(--bg-grad-a), transparent 60%),
+    radial-gradient(50rem 40rem at 110% 110%, var(--bg-grad-b), transparent 60%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+}
+
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+/* Hide number spinners: big numeric keypad entry instead. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-rise {
+  animation: rise 0.28s ease-out both;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-sunken) 25%, var(--border) 50%, var(--surface-sunken) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pb-nav {
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 1024px) {
+  .pb-nav {
+    padding-bottom: 2.5rem;
+  }
+}
