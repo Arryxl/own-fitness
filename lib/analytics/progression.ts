@@ -3,7 +3,7 @@ import type { Exercise, PersonalRecord, PlanItem, RepUnit, WeightUnit } from "@/
 import type { ExerciseSession } from "./strength";
 import { formatWeight, fromKg, round, toKg } from "./units";
 
-export type SuggestionKind = "calibrate" | "from_record" | "increase" | "add_reps" | "progress_variation" | "cardio";
+export type SuggestionKind = "calibrate" | "from_record" | "increase" | "add_reps" | "progress_variation" | "cardio" | "percent";
 
 export interface ProgressionSuggestion {
   kind: SuggestionKind;

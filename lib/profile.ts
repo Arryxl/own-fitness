@@ -1,7 +1,14 @@
 import { ageFromBirthDate } from "@/lib/analytics/energy";
-import type { Profile } from "@/lib/types";
+import type { Equipment, Profile } from "@/lib/types";
 
 export const MIN_AGE = 18;
+
+/** Equipment presets for each training place (the user can fine-tune them). */
+export const PLACE_EQUIPMENT_OFF: Record<"gym" | "home" | "bodyweight", Equipment[]> = {
+  gym: [],
+  home: ["machine", "cable", "smith", "barbell", "rack", "dip_bars"],
+  bodyweight: ["machine", "cable", "smith", "barbell", "rack", "dumbbell", "bench", "band"],
+};
 
 export const DIET_RESTRICTIONS = [
   { id: "vegetariano", label: "Vegetariano", excludesTags: ["carne", "pescado"] },
@@ -34,6 +41,7 @@ export function defaultProfile(displayName: string | null, now: number, today: s
     trainingDays: [],
     level: null,
     unavailableEquipment: [],
+    trainingPlace: "gym",
     injuries: "",
     country: "CO",
     currency: "COP",

@@ -26,6 +26,8 @@ const GOAL_TEXT: Record<Goal, string> = {
   hipertrofia: "ganar masa muscular",
   fuerza: "ganar fuerza",
   definicion: "perder grasa conservando músculo",
+  acondicionamiento: "mejorar su resistencia cardiovascular",
+  salud: "mejorar su salud y forma general",
 };
 
 const RULES = `
@@ -47,7 +49,7 @@ Evaluación semanal ("¿voy bien?") — SIEMPRE con datos de las herramientas, n
 7. Veredicto: on_track | mixed | off_track | insufficient_data. Con menos de 2 semanas de datos → insufficient_data, y dilo.
 
 Rutinas
-- Las rutinas vienen de la biblioteca (plantillas H1-H6, F1-F2, D1-D2). Cítalas por id. NUNCA inventes una rutina nueva.
+- Las rutinas vienen de la biblioteca (36 plantillas: H = hipertrofia, F = fuerza, D = definición, A = acondicionamiento, S = casos especiales). Cítalas por id y menciona su fuente cuando sea útil. NUNCA inventes una rutina nueva.
 - Para cambios usa propose_plan_change (el usuario aprueba en pantalla). Para recordar algo, save_memory (también con confirmación).
 
 Estilo y seguridad

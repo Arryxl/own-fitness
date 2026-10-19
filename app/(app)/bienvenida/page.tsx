@@ -11,13 +11,13 @@ import { Field, Input, Select, TextArea, Toggle, parseNum } from "@/components/u
 import { Button } from "@/components/ui";
 import { todayISO } from "@/lib/analytics/dates";
 import { patchProfile } from "@/lib/db/write";
-import { EQUIPMENT_LABEL, GOAL_LABEL, LEVEL_LABEL, WEEKDAY_LONG } from "@/lib/format";
-import { COUNTRIES, DIET_RESTRICTIONS, MIN_AGE, defaultProfile, isAdult } from "@/lib/profile";
-import type { Equipment, Goal, Level, Profile, Sex, UnitsPref } from "@/lib/types";
+import { EQUIPMENT_LABEL, GOAL_DESCRIPTION, GOAL_LABEL, LEVEL_LABEL, PLACE_LABEL, WEEKDAY_LONG } from "@/lib/format";
+import { COUNTRIES, DIET_RESTRICTIONS, MIN_AGE, PLACE_EQUIPMENT_OFF, defaultProfile, isAdult } from "@/lib/profile";
+import type { Equipment, Goal, Level, Place, Profile, Sex, UnitsPref } from "@/lib/types";
 
-const STEPS = ["Bienvenida", "Sobre ti", "Objetivo", "Tu gimnasio", "Comida", "Coach IA"] as const;
+const STEPS = ["Bienvenida", "Sobre ti", "Objetivo", "Dónde entrenas", "Comida", "Coach IA"] as const;
 const AI_TIER = process.env.NEXT_PUBLIC_GEMINI_TIER ?? "free";
-const TOGGLE_EQUIPMENT: Equipment[] = ["machine", "dumbbell", "cable", "smith", "barbell", "rack", "bench", "band"];
+const TOGGLE_EQUIPMENT: Equipment[] = ["machine", "dumbbell", "cable", "smith", "barbell", "rack", "bench", "band", "pullup_bar", "dip_bars"];
 
 type Draft = Omit<Profile, "createdAt" | "schemaVersion" | "timezone" | "activePlanId" | "proteinTargetG" | "stepsBaseline" | "restTimerDefaultSec">;
 
@@ -163,7 +163,7 @@ export default function WelcomePage() {
             <h2 className="text-2xl font-extrabold">Tu objetivo</h2>
             <div className="grid gap-2">
               {(Object.keys(GOAL_LABEL) as Goal[]).map((g) => (
-                <Card key={g} on={d.goal === g} onClick={() => set({ goal: g })} title={GOAL_LABEL[g]} text={g === "hipertrofia" ? "Ganar masa muscular." : g === "fuerza" ? "Levantar más en los ejercicios básicos." : "Perder grasa conservando músculo."} />
+                <Card key={g} on={d.goal === g} onClick={() => set({ goal: g })} title={GOAL_LABEL[g]} text={GOAL_DESCRIPTION[g]} />
               ))}
             </div>
             <fieldset>
@@ -204,7 +204,18 @@ export default function WelcomePage() {
 
         {step === 3 && (
           <>
-            <h2 className="text-2xl font-extrabold">Tu gimnasio</h2>
+            <h2 className="text-2xl font-extrabold">¿Dónde entrenas?</h2>
+            <div className="grid gap-2">
+              {(Object.keys(PLACE_LABEL) as Place[]).map((pl) => (
+                <Card
+                  key={pl}
+                  on={(d.trainingPlace ?? "gym") === pl}
+                  onClick={() => set({ trainingPlace: pl, unavailableEquipment: [...PLACE_EQUIPMENT_OFF[pl]] })}
+                  title={PLACE_LABEL[pl]}
+                  text={pl === "gym" ? "Máquinas, poleas, mancuernas y barras." : pl === "home" ? "Mancuernas ajustables, bandas y quizá un banco." : "Barra de dominadas o parque; nada más."}
+                />
+              ))}
+            </div>
             <p className="text-sm text-muted">Desmarca lo que no hay. Los ejercicios que lo necesiten quedarán como no disponibles y la app usará sus alternativas. Lo puedes ajustar ejercicio por ejercicio después.</p>
             <div className="rounded-2xl bg-sunken px-3">
               {TOGGLE_EQUIPMENT.map((e) => (

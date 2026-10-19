@@ -7,27 +7,48 @@ import { SAFETY_FLOOR_KCAL, ageFromBirthDate, bmrMifflin, energyTargets } from "
 
 const seed = SeedSchema.parse(raw);
 const tpl = (id: string) => seed.programTemplates.find((t) => t.id === id)!;
-const rec = (goal: "hipertrofia" | "fuerza" | "definicion", days: number[], level: "principiante" | "intermedio" | "avanzado") =>
-  recommendTemplates(seed.programTemplates, seed.recommendationRules, { goal, trainingDays: days, level });
+type G = "hipertrofia" | "fuerza" | "definicion" | "acondicionamiento" | "salud";
+const rec = (goal: G, days: number[], level: "principiante" | "intermedio" | "avanzado", extra: { place?: "gym" | "home" | "bodyweight"; ageYears?: number } = {}) =>
+  recommendTemplates(seed.programTemplates, seed.recommendationRules, { goal, trainingDays: days, level, ...extra });
 
 describe("recommendation rules", () => {
-  it("suggests H1 for 3-day hypertrophy", () => expect(rec("hipertrofia", [1, 3, 5], "principiante").ids).toEqual(["H1"]));
+  it("suggests H1 and Fierce 5 for a 3-day hypertrophy beginner", () => expect(rec("hipertrofia", [1, 3, 5], "principiante").ids).toEqual(["H1", "H14"]));
   it("drops H3 for a 4-day beginner but keeps H2", () => {
     const r = rec("hipertrofia", [1, 2, 4, 5], "principiante");
     expect(r.ids).toEqual(["H2"]);
     expect(r.advice.get("H3")?.avoidReason).toBeTruthy();
   });
-  it("offers H2 and H3 to a 4-day intermediate", () => expect(rec("hipertrofia", [1, 2, 4, 5], "intermedio").ids).toEqual(["H2", "H3"]));
+  it("offers PHUL and H2 to a 4-day intermediate", () => expect(rec("hipertrofia", [1, 2, 4, 5], "intermedio").ids).toEqual(["H10", "H2"]));
+  it("offers the beginner PPL to a 6-day beginner and keeps advanced splits out", () => {
+    const r = rec("hipertrofia", [1, 2, 3, 4, 5, 6], "principiante");
+    expect(r.ids).toEqual(["H7"]);
+    expect(r.advice.get("H5")?.avoidReason).toBeTruthy();
+  });
   it("warns (not hides) 6-day templates that need Saturday", () => {
     const r = rec("hipertrofia", [1, 2, 3, 4, 5], "intermedio");
     expect(r.advice.get("H5")?.warnings.join(" ")).toMatch(/sábado/);
-    expect(r.advice.size).toBe(10);
+    expect(r.advice.size).toBe(seed.programTemplates.length);
   });
   it("maps strength and cutting goals", () => {
-    expect(rec("fuerza", [1, 3, 5], "principiante").ids).toEqual(["F1"]);
+    expect(rec("fuerza", [1, 3, 5], "principiante").ids).toEqual(["F3", "F1"]);
+    expect(rec("fuerza", [1, 3, 5], "intermedio").ids).toEqual(["F8", "F9"]);
     expect(rec("fuerza", [1, 2, 4, 5], "principiante").ids).toEqual(["F2"]);
     expect(rec("definicion", [1, 3, 5], "principiante").ids).toEqual(["D2"]);
     expect(rec("definicion", [1, 2, 4, 5], "intermedio").ids).toEqual(["D1"]);
+  });
+  it("prioritizes where the user trains and age over the goal", () => {
+    expect(rec("hipertrofia", [1, 3, 5], "principiante", { place: "bodyweight" }).ids[0]).toBe("S1");
+    expect(rec("hipertrofia", [1, 3, 5], "principiante", { place: "home" }).ids[0]).toBe("S4");
+    expect(rec("salud", [1, 3, 5], "principiante", { ageYears: 67 }).ids[0]).toBe("S2");
+    // A gym template is never recommended to someone without a gym, only warned about.
+    const home = rec("hipertrofia", [1, 3, 5], "principiante", { place: "home" });
+    expect(home.ids).not.toContain("H1");
+    expect(home.advice.get("H1")?.warnings.join(" ")).toMatch(/gimnasio/);
+  });
+  it("covers conditioning and general-health goals", () => {
+    expect(rec("acondicionamiento", [1, 3, 5], "principiante").ids).toEqual(["A1", "A3"]);
+    expect(rec("salud", [1, 4], "principiante").ids[0]).toBe("S3");
+    expect(rec("acondicionamiento", [1, 3, 5], "principiante").advice.get("A4")?.avoidReason).toBeTruthy();
   });
   it("falls back to the closest template when no rule matches", () => {
     expect(rec("hipertrofia", [1, 2], "principiante").ids).toEqual(["H1"]);

@@ -28,7 +28,7 @@ export type MuscleCount = Partial<Record<Muscle, number>>;
 type MuscleSource = Pick<Exercise, "primaryMuscle" | "secondaryMuscles">;
 
 function add(acc: MuscleCount, m: Muscle, v: number) {
-  if (m === "cardio") return;
+  if (m === "cardio" || m === "balance") return;
   acc[m] = round((acc[m] ?? 0) + v, 2);
 }
 

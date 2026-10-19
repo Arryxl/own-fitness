@@ -1,7 +1,7 @@
 // Turning a read-only program template into the user's editable plan, and the
 // recommendation engine that suggests templates from the user's profile.
 import type { Level, Plan, PlanSession, Profile } from "@/lib/types";
-import type { ProgramTemplate, RecommendationRule } from "@/lib/seed/schema";
+import type { Place, ProgramTemplate, RecommendationRule } from "@/lib/seed/schema";
 
 export const VARIANT_LABEL: Record<string, string> = {
   default: "Calendario estándar",
@@ -80,18 +80,51 @@ export interface Recommendation {
   advice: Map<string, TemplateAdvice>;
 }
 
-type Who = Pick<Profile, "goal" | "level" | "trainingDays">;
+type Who = Pick<Profile, "goal" | "level" | "trainingDays"> & {
+  /** Where the user trains; defaults to a full gym. */
+  place?: Place | null;
+  ageYears?: number | null;
+};
+
+interface Condition {
+  goal?: string;
+  daysPerWeek?: number;
+  level?: string;
+  ageMin?: number;
+  place?: Place;
+}
+
+/** Place and age describe the person more than the goal does, so those rules win ties. */
+function specificity(c: Condition): number {
+  return (c.place ? 3 : 0) + (c.ageMin ? 3 : 0) + (c.goal ? 1 : 0) + (c.daysPerWeek ? 1 : 0) + (c.level ? 1 : 0);
+}
+
+/** Can this template be done where the user trains? */
+export function placeFits(templatePlace: Place | undefined, userPlace: Place | null | undefined): boolean {
+  const u = userPlace ?? "gym";
+  const t = templatePlace ?? "gym";
+  if (u === "gym") return true;
+  if (u === "home") return t !== "gym";
+  return t === "bodyweight";
+}
+
+const PLACE_TEXT: Record<Place, string> = { gym: "un gimnasio", home: "mancuernas o bandas", bodyweight: "solo tu peso corporal" };
 
 /** Applies recommendationRules to the profile. Never hides templates: it only labels and warns. */
 export function recommendTemplates(templates: ProgramTemplate[], rules: RecommendationRule[], who: Who): Recommendation {
   const days = who.trainingDays.length;
-  const matches = (cond: { goal?: string; daysPerWeek?: number; level?: string }) =>
-    (cond.goal === undefined || cond.goal === who.goal) && (cond.daysPerWeek === undefined || cond.daysPerWeek === days) && (cond.level === undefined || cond.level === who.level);
+  const place = who.place ?? "gym";
+  const matches = (c: Condition) =>
+    (c.goal === undefined || c.goal === who.goal) &&
+    (c.daysPerWeek === undefined || c.daysPerWeek === days) &&
+    (c.level === undefined || c.level === who.level) &&
+    (c.ageMin === undefined || (who.ageYears != null && who.ageYears >= c.ageMin)) &&
+    (c.place === undefined || c.place === place);
 
-  let recommended: string[] = [];
   const notes = new Map<string, string>();
   const avoid = new Map<string, string>();
   let fallback: string | null = null;
+  const matched: { score: number; ids: string[] }[] = [];
   for (const r of rules) {
     if ("default" in r) {
       fallback = r.default;
@@ -99,18 +132,21 @@ export function recommendTemplates(templates: ProgramTemplate[], rules: Recommen
     }
     if (!matches(r.if)) continue;
     if ("recommend" in r) {
-      recommended.push(...r.recommend);
-      if (r.note) for (const id of r.recommend) notes.set(id, r.note);
+      matched.push({ score: specificity(r.if), ids: r.recommend });
+      if (r.note) for (const id of r.recommend) if (!notes.has(id)) notes.set(id, r.note);
     } else {
       for (const id of r.avoid) avoid.set(id, r.why);
     }
   }
-  // Avoided templates drop out of the suggestion (they stay visible with a warning).
-  recommended = [...new Set(recommended)].filter((id) => !avoid.has(id));
+  const byId = new Map(templates.map((t) => [t.id, t]));
+  // Most specific rules first (stable for equal scores), then drop avoided or impossible-here templates.
+  let recommended = [...new Set(matched.sort((a, b) => b.score - a.score).flatMap((m) => m.ids))].filter(
+    (id) => !avoid.has(id) && placeFits(byId.get(id)?.place, place),
+  );
   if (recommended.length === 0) {
-    // Same goal, closest number of days, not avoided.
+    // Same goal, doable here, closest number of days, not avoided.
     const sameGoal = templates
-      .filter((t) => t.goal === who.goal && !avoid.has(t.id))
+      .filter((t) => t.goal === who.goal && !avoid.has(t.id) && placeFits(t.place, place))
       .sort((a, b) => Math.abs(a.daysPerWeek - days) - Math.abs(b.daysPerWeek - days));
     recommended = sameGoal.slice(0, 1).map((t) => t.id);
     if (recommended.length === 0 && fallback) recommended = [fallback];
@@ -124,6 +160,7 @@ export function recommendTemplates(templates: ProgramTemplate[], rules: Recommen
     else if (!levelFits(t.level, who.level)) warnings.push(`Nivel de la plantilla: ${t.level}.`);
     if (t.requiresWeekend && !who.trainingDays.some((d) => d >= 6)) warnings.push("Requiere entrenar el sábado.");
     if (days && t.daysPerWeek !== days) warnings.push(`Son ${t.daysPerWeek} días por semana y marcaste ${days}.`);
+    if (!placeFits(t.place, place)) warnings.push(`Necesita ${PLACE_TEXT[t.place ?? "gym"]} y marcaste que entrenas con ${PLACE_TEXT[place]}.`);
     if (t.goal !== who.goal && who.goal) warnings.push("Su objetivo principal es otro.");
     advice.set(t.id, { recommended: recommended.includes(t.id), avoidReason: avoid.get(t.id) ?? null, warnings, note: notes.get(t.id) ?? null });
   }

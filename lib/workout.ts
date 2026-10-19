@@ -1,5 +1,6 @@
 // Building and summarizing workout sessions on the client.
-import { exerciseHistory, performanceDroppedTwice } from "@/lib/analytics/strength";
+import { exerciseHistory, exerciseTrend, performanceDroppedTwice } from "@/lib/analytics/strength";
+import { formatWeight } from "@/lib/analytics/units";
 import { suggestNext, type ProgressionSuggestion } from "@/lib/analytics/progression";
 import { fromKg, round } from "@/lib/analytics/units";
 import type { AddOn, Exercise, PersonalRecord, Plan, PlanItem, PlanSession, RepUnit, Workout, WorkoutEntry, WorkoutSet } from "@/lib/types";
@@ -7,12 +8,23 @@ import type { AddOn, Exercise, PersonalRecord, Plan, PlanItem, PlanSession, RepU
 export const DEFAULT_ITEM: Omit<PlanItem, "exerciseId"> = { sets: 3, repMin: 8, repMax: 12, restSec: 90, rirTarget: 2, supersetGroup: null, notes: null, repUnit: "reps" };
 
 export function suggestionFor(
-  item: Pick<PlanItem, "sets" | "repMin" | "repMax" | "rirTarget"> & { repUnit?: RepUnit },
+  item: Pick<PlanItem, "sets" | "repMin" | "repMax" | "rirTarget"> & { repUnit?: RepUnit; intensity?: string },
   exercise: Exercise,
   workouts: Workout[],
   record: PersonalRecord | undefined,
 ): ProgressionSuggestion {
   const history = exerciseHistory(workouts, exercise.id);
+  if (item.intensity) {
+    // %-based programs (5/3/1, nSuns, Madcow…): load comes from a training max.
+    const best = exerciseTrend(history).bestE1rmKg ?? record?.currentWeightKg ?? null;
+    const tm = best ? best * 0.9 : null;
+    return {
+      kind: "percent",
+      weightKg: null,
+      targetReps: item.repMin,
+      message: `Carga por porcentaje: ${item.intensity}.${tm ? ` Tu máximo de entrenamiento (TM, 90 % de tu mejor e1RM) ≈ ${formatWeight(tm, exercise.displayUnit)}.` : " Registra una serie pesada para estimar tu TM."}`,
+    };
+  }
   return suggestNext({ item, exercise, last: history.at(-1) ?? null, record, droppedTwice: performanceDroppedTwice(history), repUnit: item.repUnit });
 }
 

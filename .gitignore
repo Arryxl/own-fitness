@@ -54,3 +54,7 @@ service-account*.json
 !.env.example
 
 /.tools/
+
+# deep research working files
+/research_notes/
+/reports/

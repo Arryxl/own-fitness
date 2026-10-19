@@ -13,10 +13,10 @@ const tpl = (id: string) => seed.programTemplates.find((t) => t.id === id)!;
 const plan = (id: string, variant: string | null, startDate = "2026-01-05") => planFromTemplate(tpl(id), { id: "p", variant, startDate, now: 0 });
 
 describe("planned volume matches the seed's weeklyVolume", () => {
-  for (const t of seed.programTemplates) {
+  for (const t of seed.programTemplates.filter((x) => x.weeklyVolume)) {
     it(t.id, () => {
       const v = planVolume(plan(t.id, Object.keys(t.weekdayMap)[0] ?? null), exercises);
-      for (const [m, expected] of Object.entries(t.weeklyVolume.fractionalSets)) {
+      for (const [m, expected] of Object.entries(t.weeklyVolume!.fractionalSets)) {
         expect(v[m as keyof typeof v] ?? 0, `${t.id}/${m}`).toBeCloseTo(expected, 0);
       }
     });

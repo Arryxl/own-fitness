@@ -1,5 +1,5 @@
 import { parseISODate } from "@/lib/analytics/dates";
-import type { Equipment, Goal, Level, Muscle, SubstitutionReason, Verdict } from "@/lib/types";
+import type { Category, Equipment, Goal, Level, Muscle, Place, SubstitutionReason, Verdict } from "@/lib/types";
 
 const LOCALE = "es-CO";
 
@@ -48,12 +48,49 @@ export const MUSCLE_LABEL: Record<Muscle, string> = {
   calves: "Pantorrillas",
   abs: "Abdomen",
   cardio: "Cardio",
+  balance: "Equilibrio",
 };
 
 export const GOAL_LABEL: Record<Goal, string> = {
   hipertrofia: "Crecer",
   fuerza: "Fuerza",
   definicion: "Definir",
+  acondicionamiento: "Acondicionamiento",
+  salud: "Salud general",
+};
+
+export const GOAL_DESCRIPTION: Record<Goal, string> = {
+  hipertrofia: "Ganar masa muscular.",
+  fuerza: "Levantar más en los ejercicios básicos.",
+  definicion: "Perder grasa conservando músculo.",
+  acondicionamiento: "Mejorar la resistencia: correr, intervalos, capacidad aeróbica.",
+  salud: "Estar sano y en forma: fuerza 2 días + actividad, o lo mínimo con poco tiempo.",
+};
+
+export const PLACE_LABEL: Record<Place, string> = {
+  gym: "Gimnasio",
+  home: "Casa (mancuernas o bandas)",
+  bodyweight: "Sin equipo (peso corporal)",
+};
+
+export const CATEGORY_LABEL: Record<Category, string> = {
+  fuerza_novato: "Fuerza · principiante",
+  fuerza_intermedio: "Fuerza · intermedio",
+  hipertrofia: "Hipertrofia",
+  definicion: "Definición",
+  acondicionamiento: "Acondicionamiento",
+  salud: "Salud",
+  calistenia: "Calistenia",
+  mayores: "Mayores / regreso",
+  poco_tiempo: "Poco tiempo",
+  casa: "En casa",
+};
+
+export const VERIFICATION_LABEL: Record<string, { text: string; tone: "primary" | "violet" | "amber" | "neutral" }> = {
+  primaria: { text: "Fuente primaria", tone: "primary" },
+  comunitaria: { text: "Versión comunitaria", tone: "violet" },
+  sintesis: { text: "Síntesis de guías", tone: "amber" },
+  adaptacion: { text: "Adaptación IronLog", tone: "neutral" },
 };
 
 export const LEVEL_LABEL: Record<Level, string> = {
@@ -88,4 +125,6 @@ export const EQUIPMENT_LABEL: Record<Equipment, string> = {
   bodyweight: "Peso corporal",
   bench: "Banco",
   band: "Bandas",
+  pullup_bar: "Barra de dominadas",
+  dip_bars: "Paralelas",
 };

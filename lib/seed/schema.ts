@@ -18,13 +18,23 @@ export const MUSCLES = [
   "calves",
   "abs",
   "cardio",
+  "balance",
 ] as const;
 export const MuscleSchema = z.enum(MUSCLES);
 
-export const EQUIPMENT = ["machine", "dumbbell", "bench", "smith", "cable", "bodyweight", "band", "barbell", "rack"] as const;
+export const EQUIPMENT = ["machine", "dumbbell", "bench", "smith", "cable", "bodyweight", "band", "barbell", "rack", "pullup_bar", "dip_bars"] as const;
 export const EquipmentSchema = z.enum(EQUIPMENT);
 
-export const GoalSchema = z.enum(["hipertrofia", "fuerza", "definicion"]);
+export const GoalSchema = z.enum(["hipertrofia", "fuerza", "definicion", "acondicionamiento", "salud"]);
+export const PlaceSchema = z.enum(["gym", "home", "bodyweight"]);
+export const CATEGORIES = ["fuerza_novato", "fuerza_intermedio", "hipertrofia", "definicion", "acondicionamiento", "salud", "calistenia", "mayores", "poco_tiempo", "casa"] as const;
+export const CategorySchema = z.enum(CATEGORIES);
+export const SourceSchema = z.object({
+  name: z.string(),
+  url: z.string().url().nullable(),
+  /** primaria = author/official page · comunitaria = community transcription · sintesis = IronLog synthesis of guidelines · adaptacion = IronLog adaptation */
+  verification: z.enum(["primaria", "comunitaria", "sintesis", "adaptacion"]),
+});
 export const TemplateLevelSchema = z.enum(["principiante", "principiante-intermedio", "intermedio", "avanzado"]);
 export const RepUnitSchema = z.enum(["reps", "seconds", "minutes"]);
 
@@ -57,6 +67,10 @@ export const TemplateItemSchema = z.object({
   supersetGroup: z.string().nullable(),
   notes: z.string().nullable(),
   repUnit: RepUnitSchema,
+  /** Load prescription for %-based programs, e.g. "65/75/85 % del TM". */
+  intensity: z.string().optional(),
+  /** Last set is AMRAP (as many reps as possible with good form). */
+  amrap: z.boolean().optional(),
 });
 
 export const TemplateSessionSchema = z.object({
@@ -90,12 +104,20 @@ export const ProgramTemplateSchema = z.object({
   caveats: z.string(),
   sessions: z.array(TemplateSessionSchema).min(1),
   requiresWeekend: z.boolean(),
-  weeklyVolume: z.object({
-    directSets: z.record(z.string(), z.number()),
-    fractionalSets: z.record(z.string(), z.number()),
-    note: z.string(),
-  }),
-  weeklyFrequencyDirect: z.record(z.string(), z.number()),
+  weeklyVolume: z
+    .object({
+      directSets: z.record(z.string(), z.number()),
+      fractionalSets: z.record(z.string(), z.number()),
+      note: z.string(),
+    })
+    .optional(),
+  weeklyFrequencyDirect: z.record(z.string(), z.number()).optional(),
+  category: CategorySchema,
+  place: PlaceSchema,
+  tags: z.array(z.string()),
+  source: SourceSchema,
+  deloadRules: z.array(z.string()).optional(),
+  durationWeeks: z.number().int().positive().optional(),
   sessionMinutesRange: z.tuple([z.number(), z.number()]),
   cardioMinutesPerWeek: z.number(),
   sessionsPerWeek: z.number(),
@@ -117,6 +139,8 @@ const ConditionSchema = z.object({
   goal: GoalSchema.optional(),
   daysPerWeek: z.number().optional(),
   level: z.enum(["principiante", "intermedio", "avanzado"]).optional(),
+  ageMin: z.number().int().optional(),
+  place: PlaceSchema.optional(),
 });
 
 export const RecommendationRuleSchema = z.union([
@@ -126,12 +150,12 @@ export const RecommendationRuleSchema = z.union([
 ]);
 
 export const SeedSchema = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.union([z.literal(2), z.literal(3)]),
   dataVersion: z.string(),
   language: z.literal("es"),
   currency: z.string(),
-  goals: z.record(GoalSchema, z.string()),
-  muscles: z.record(MuscleSchema, z.string()),
+  goals: z.partialRecord(GoalSchema, z.string()),
+  muscles: z.partialRecord(MuscleSchema, z.string()),
   exercises: z.array(CatalogExerciseSchema).min(1),
   programTemplates: z.array(ProgramTemplateSchema).min(1),
   addOns: z.array(AddOnSchema),
@@ -141,6 +165,8 @@ export const SeedSchema = z.object({
 export type Muscle = z.infer<typeof MuscleSchema>;
 export type Equipment = z.infer<typeof EquipmentSchema>;
 export type Goal = z.infer<typeof GoalSchema>;
+export type Place = z.infer<typeof PlaceSchema>;
+export type Category = z.infer<typeof CategorySchema>;
 export type RepUnit = z.infer<typeof RepUnitSchema>;
 export type CatalogExercise = z.infer<typeof CatalogExerciseSchema>;
 export type TemplateItem = z.infer<typeof TemplateItemSchema>;

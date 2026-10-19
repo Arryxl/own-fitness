@@ -9,7 +9,7 @@ export function equipmentAvailable(equipment: Equipment[], unavailable: Equipmen
 
 function metricFor(e: Pick<CatalogExercise, "displayUnit" | "family" | "primaryMuscle">): RepUnit {
   if (e.displayUnit === "min" || e.primaryMuscle === "cardio") return "minutes";
-  if (e.family === "core_estatico") return "seconds";
+  if (e.family === "core_estatico" || e.family === "equilibrio") return "seconds";
   return "reps";
 }
 

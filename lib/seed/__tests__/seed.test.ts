@@ -15,7 +15,25 @@ describe("rutinas_seed.json", () => {
 
   it("has the expected library size", () => {
     if (!parsed.success) return;
-    expect(parsed.data.exercises).toHaveLength(93);
-    expect(parsed.data.programTemplates.map((t) => t.id).sort()).toEqual(["D1", "D2", "F1", "F2", "H1", "H2", "H3", "H4", "H5", "H6"]);
+    expect(parsed.data.exercises.length).toBeGreaterThanOrEqual(130);
+    expect(parsed.data.programTemplates.length).toBeGreaterThanOrEqual(36);
+    const ids = parsed.data.programTemplates.map((t) => t.id);
+    for (const id of ["H5", "H7", "H8", "H9", "H10", "H11", "H12", "H13", "H14", "F3", "F6", "F8", "F9", "F10", "F11", "A1", "S1", "S2", "S3", "S4"]) expect(ids).toContain(id);
+  });
+
+  it("covers every goal, category and training place", () => {
+    if (!parsed.success) return;
+    const t = parsed.data.programTemplates;
+    expect(new Set(t.map((x) => x.goal))).toEqual(new Set(["hipertrofia", "fuerza", "definicion", "acondicionamiento", "salud"]));
+    expect(new Set(t.map((x) => x.place))).toEqual(new Set(["gym", "home", "bodyweight"]));
+    expect(t.every((x) => x.source.name.length > 0)).toBe(true);
+  });
+
+  it("every template has an explicit progression mechanism", () => {
+    if (!parsed.success) return;
+    for (const t of parsed.data.programTemplates) {
+      const v2 = t.source.verification === "adaptacion";
+      expect(v2 || (t.progressionRules?.length ?? 0) > 0, t.id).toBe(true);
+    }
   });
 });

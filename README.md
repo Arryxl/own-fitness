@@ -15,6 +15,22 @@ Next.js 16 (App Router, TypeScript estricto) · Tailwind v4 · Firebase Auth + F
 - **Coach IA**: chat con herramientas que leen solo los datos del usuario autenticado, informes semanales, memoria (RAG), propuestas de cambio con aprobación.
 - **Admin**: número de usuarios, uso de IA, cuota de Firestore con alerta al 70 % y bloquear/desbloquear cuentas. **No puede leer entrenamientos, medidas ni chats.**
 
+## Catálogo de rutinas (v3)
+
+36 plantillas en `data/seed/rutinas_seed.json`, generadas por `scripts/catalog/build-v3.mjs` sobre la biblioteca v2:
+
+| Grupo | Plantillas |
+| --- | --- |
+| Hipertrofia | H1-H6 (biblioteca v2), PPL de Metallicadpa 6 y 3 días, PPL de Coolcicada, PHUL, PHAT, GBR de Lyle McDonald, bro split, Fierce 5 |
+| Fuerza | F1-F2 (v2), Basic Beginner Routine, GSLP, Starting Strength, 5/3/1 for Beginners, Ivysaur 4-4-8, Texas Method, Madcow, nSuns 5 días, 5/3/1 BBB |
+| Definición | D1-D2 (v2) |
+| Acondicionamiento | Couch to 5K (NHS), 4×4 noruego, 10×1 de Gibala, sprints tipo Wingate |
+| Salud y casos especiales | OMS fuerza + cardio, calistenia (Recommended Routine), mayores / regreso, minimalista 2 días, casa con mancuernas y bandas |
+
+Cada plantilla lleva `source` con su nivel de verificación: **primaria** (autor o página oficial), **comunitaria** (transcripción contrastada: Liftosaur, Lift Vault, wiki de r/Fitness), **síntesis** (IronLog a partir de guías como ACSM 2026, OMS 2020 o NSCA 2019) o **adaptación** (biblioteca v2). Los programas de marca se describen como estructura pública, sin copiar material de pago. Se dejaron fuera, por no poder verificarlos: Candito, Sheiko, PPLUL, las variantes de nSuns de 4 y 6 días, los programas de Nippard, Strong Curves B/C y las tablas de RP.
+
+`lib/analytics/validate.ts` revisa cada plantilla contra la evidencia: volumen semanal (≥4 series como dosis mínima, ~10 para hipertrofia, >30 se marca), ~11 series por sesión, frecuencia, deltoide posterior, abdomen y cargas pesadas en fuerza. Son notas, no bloqueos.
+
 ## Arquitectura de datos
 
 ```

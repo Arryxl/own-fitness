@@ -139,6 +139,7 @@ export function ExerciseCard({
           </span>
         </span>
         {item?.supersetGroup && <Badge tone="amber">Superserie {item.supersetGroup}</Badge>}
+        {item?.amrap && <Badge tone="violet">AMRAP</Badge>}
         {substituted && <Badge tone="violet">Sustituto</Badge>}
         <ChevronDown className={clsx("size-5 shrink-0 text-muted transition", expanded && "rotate-180")} />
       </button>

@@ -65,7 +65,7 @@ test("registro → onboarding → rutina → entreno offline → informe IA → 
   await expect(page.getByRole("heading", { name: "Rutinas" })).toBeVisible();
   const recommended = page.locator("section", { hasText: "Recomendadas para ti" });
   await expect(recommended.getByText("Full Body ×3")).toBeVisible();
-  await recommended.getByRole("button", { name: "Usar esta rutina" }).click();
+  await recommended.getByRole("button", { name: "Usar esta rutina" }).first().click();
   await page.getByRole("button", { name: "Crear mi plan" }).click();
 
   // 4) First workout, logged with the network off.
