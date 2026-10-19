@@ -1,0 +1,62 @@
+import { test, expect } from "@playwright/test";
+
+// Visual tour for reviews: SCREENSHOTS_DIR=... npm run test:e2e -- screens
+const dir = process.env.SCREENSHOTS_DIR;
+
+test.skip(!dir, "set SCREENSHOTS_DIR to capture screens");
+
+test("capturas", async ({ page }) => {
+  const email = `tour-${Date.now()}@example.com`;
+  const shot = (name: string) => page.screenshot({ path: `${dir}/${name}.png`, fullPage: true });
+  await page.goto("/login");
+  await page.waitForTimeout(1500);
+  await shot("01-login");
+  await page.getByRole("tab", { name: "Crear cuenta" }).click();
+  await page.getByLabel("Nombre o alias").fill("Juan");
+  await page.getByLabel("Correo").fill(email);
+  await page.getByLabel("Contraseña").fill("contraseña-segura-123");
+  await page.getByRole("button", { name: "Crear cuenta", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Verifica tu correo" })).toBeVisible();
+  await shot("02-verificar");
+  const codes = (await (await fetch("http://127.0.0.1:9099/emulator/v1/projects/demo-ironlog/oobCodes")).json()).oobCodes as { email: string; oobLink: string }[];
+  await fetch(codes.reverse().find((c) => c.email === email)!.oobLink);
+  await page.getByRole("button", { name: "Ya lo verifiqué" }).click();
+  await page.getByLabel("Entiendo y acepto el aviso de salud.").check();
+  await page.getByRole("checkbox", { name: /política de privacidad/ }).check();
+  await shot("03-bienvenida");
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByLabel("Fecha de nacimiento").fill("1999-03-10");
+  await page.getByRole("button", { name: "Hombre" }).click();
+  await page.getByLabel("Estatura (cm)").fill("182");
+  await page.getByLabel("Peso (kg)").fill("74");
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByRole("button", { name: /^Crecer/ }).click();
+  await page.getByRole("button", { name: "Principiante" }).click();
+  for (const d of ["lunes", "martes", "jueves", "viernes"]) await page.getByRole("button", { name: d, exact: true }).click();
+  await shot("04-objetivo");
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await shot("05-gimnasio");
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByLabel("Acepto usar el coach de IA con mis datos").check({ force: true });
+  await shot("06-ia");
+  await page.getByRole("button", { name: "Ver rutinas recomendadas" }).click();
+  await expect(page.getByText("Recomendadas para ti")).toBeVisible();
+  await page.waitForTimeout(800);
+  await shot("07-rutinas");
+  await page.locator("section", { hasText: "Recomendadas para ti" }).getByRole("button", { name: "Usar esta rutina" }).first().click();
+  await page.waitForTimeout(500);
+  await shot("08-usar-rutina");
+  await page.getByRole("button", { name: "Crear mi plan" }).click();
+  await page.waitForTimeout(1500);
+  await shot("09-hoy");
+  await page.goto("/nutricion");
+  await page.waitForTimeout(1500);
+  await shot("10-nutricion");
+  await page.goto("/planes");
+  await page.waitForTimeout(1500);
+  await shot("11-planes");
+  await page.goto("/ajustes");
+  await page.waitForTimeout(1000);
+  await shot("12-ajustes");
+});

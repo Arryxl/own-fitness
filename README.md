@@ -1,102 +1,101 @@
-# IronLog · gimnasio + coach de IA
+# IronLog · gimnasio + coach de IA (multiusuario)
 
-App personal (PWA) para registrar entrenamientos, medidas, pasos y comidas, con un **coach de IA (Gemini)** que analiza los datos reales y propone ajustes que el usuario aprueba.
+PWA para registrar entrenamientos, medidas, pasos y comidas, con una **biblioteca de 10 rutinas reconocidas** (H1-H6 crecer, F1-F2 fuerza, D1-D2 definir) adaptadas a entrenar sin compañero, y un **coach de IA (Gemini)** que analiza los datos reales de cada usuario y propone cambios que el usuario aprueba.
 
-Next.js 16 (App Router, TypeScript estricto) · Tailwind v4 · Firebase (Auth + Firestore, plan Spark) · Gemini API (Interactions API) · Vercel Hobby. Costo de hospedaje: 0.
+Next.js 16 (App Router, TypeScript estricto) · Tailwind v4 · Firebase Auth + Firestore (plan Spark) · Gemini API (Interactions API) · pensado para Vercel Hobby.
 
-## Qué hace
+## Funciones
 
-- **Hoy**: sesión del día según el plan (L-M-V + día flotante martes/jueves activable por semana), progreso semanal, acciones rápidas.
-- **Entrenar**: series con reps, peso en **lb o kg por ejercicio** (se guarda en kg; 1 lb = 0,45359237 kg), RIR, calentamiento, copiar serie, temporizador de descanso, «la última vez» y sugerencia de **doble progresión**. Botón **«No puedo hacer este»** con cadena ordenada de alternativas editables. **Funciona sin señal** y se sincroniza al volver.
-- **Progreso**: peso con promedio móvil de 7 días y tendencia, cintura y medidas, e1RM por ejercicio concreto, volumen semanal por músculo vs 12-20 series, calendario de asistencia.
-- **Nutrición**: meta 1,6-2,2 g/kg de proteína, registro manual / por catálogo / **estimado por IA con confirmación**, catálogo de alimentos baratos con **COP por 25 g de proteína** (precios que tú escribes), menú y lista de compras según presupuesto.
-- **Coach IA**: chat con streaming que consulta tus datos con herramientas, informe semanal estructurado (veredicto + máx. 3 acciones), propuestas de cambio al plan que **no se aplican sin tu aprobación**, memoria con búsqueda semántica (RAG).
-- **Respaldo**: exportar JSON y CSV, importar JSON.
+- **Cuentas**: email/contraseña con verificación de correo, Google, recuperar contraseña, cerrar sesión y **borrar cuenta con todos los datos**.
+- **Onboarding** (se puede retomar y editar): alias, fecha de nacimiento (**solo mayores de 18**), sexo, estatura, peso, objetivo, nivel, días disponibles, equipo del gimnasio, lesiones, país/moneda/presupuesto, restricciones alimentarias, unidades. Aviso de salud y política de privacidad con aceptación explícita; **consentimiento de IA aparte y desactivable**.
+- **Rutinas**: la app recomienda 1-2 plantillas con `recommendationRules` (sin que la IA invente rutinas), advierte nivel/sábado/días y deja decidir. «Usar esta rutina» crea una **copia editable** del plan (calendarios clásico/con martes/con jueves, rotación A/B de StrongLifts, cardio, superseries y refuerzos opcionales).
+- **Entrenar**: series en lb o kg por ejercicio, RIR, calentamiento, temporizador, «la última vez», doble progresión (o las reglas propias del programa), «No puedo hacer este» con cadena de alternativas. **Funciona sin señal**.
+- **Progreso**: peso (promedio 7 d), medidas, e1RM por ejercicio, volumen semanal por músculo, asistencia.
+- **Nutrición**: metas en **rangos** (Mifflin-St Jeor + objetivo; superávit pequeño para crecer, déficit moderado para definir, con umbral mínimo de seguridad), proteína 1,6-2,2 g/kg, catálogo de alimentos baratos por país con tus precios (orden por costo de 25 g de proteína), estimación de comidas y menús con IA **que apruebas antes de guardar**.
+- **Coach IA**: chat con herramientas que leen solo los datos del usuario autenticado, informes semanales, memoria (RAG), propuestas de cambio con aprobación.
+- **Admin**: número de usuarios, uso de IA, cuota de Firestore con alerta al 70 % y bloquear/desbloquear cuentas. **No puede leer entrenamientos, medidas ni chats.**
 
-## Puesta en marcha
+## Arquitectura de datos
 
-### 1. Requisitos
-Node 20+ (probado con 26) y npm.
+```
+catalog/meta                 versión, objetivos, músculos, recommendationRules   (solo lectura)
+catalog/exercises            { items: [93 ejercicios] }                          (solo lectura)
+catalog/programTemplates     { items: [10 plantillas] }                          (solo lectura)
+catalog/addOns               { items: [3 refuerzos] }                            (solo lectura)
+catalog/foods_CO | foods_DEFAULT  alimentos semilla por país                     (solo lectura)
+users/{uid}                  perfil
+users/{uid}/exerciseOverrides  solo lo que el usuario cambió (o ejercicios propios)
+users/{uid}/plans, workouts, bodyMetrics, activity, meals, foods, personalRecords, weeklyStats
+users/{uid}/aiChats/*/messages, aiReports, aiMenus, memories, proposals
+users/{uid}/aiUsage/{día}    contadores de IA (solo servidor)
+system/aiUsage-{día}, system/events-*   tope global y eventos mínimos (solo servidor)
+```
+
+El catálogo vive en **documentos agregados**: cargarlo cuesta ~5 lecturas por usuario (y queda en caché offline), en vez de copiar 93 ejercicios a cada cuenta.
+
+## Puesta en marcha local
 
 ```bash
 npm install
-cp .env.example .env.local
+cp .env.example .env.local     # completa las variables (ver abajo)
+npm run seed                   # sube el catálogo global, publica firestore.rules y da el rol admin
+npm run dev                    # http://localhost:3000
 ```
 
-### 2. Probar sin Firebase (modo demo)
-En `.env.local` pon `NEXT_PUBLIC_DEMO_MODE=1` y ejecuta `npm run dev`. La app usa datos de ejemplo guardados en el navegador. La IA no funciona en demo. El modo demo nunca se activa en builds de producción.
+### Variables de entorno
 
-### 3. Crear el proyecto de Firebase (plan Spark, sin tarjeta)
-1. En <https://console.firebase.google.com> crea un proyecto.
-2. **Authentication → Método de acceso → Google**: habilítalo.
-3. **Firestore Database → Crear base de datos** (modo producción, región cercana, p. ej. `southamerica-east1` o `us-east1`).
-4. **Configuración del proyecto → Tus apps → Web (`</>`)**: registra la app y copia la config en las variables `NEXT_PUBLIC_FIREBASE_*` de `.env.local`.
-5. **Configuración del proyecto → Cuentas de servicio → Generar nueva clave privada**. Codifícala en base64 y guárdala en `FIREBASE_SERVICE_ACCOUNT` (nunca subas el JSON al repo):
-   - PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("clave.json"))`
-   - Bash: `base64 -w0 clave.json`
-6. `ALLOWED_EMAIL`: tu correo de Google (puede ser una lista separada por comas).
-7. Reglas: `npm run rules:build` genera `firestore.rules` desde `firestore.rules.tmpl` con tu email (el archivo generado está en `.gitignore`). Publícalas con `npx firebase-tools deploy --only firestore:rules --project <id>` o pégalas en la consola (Firestore → Reglas).
+| Variable | Dónde | Para qué |
+|---|---|---|
+| `NEXT_PUBLIC_FIREBASE_*` | cliente | Config web de Firebase (pública por diseño; la protegen las reglas) |
+| `FIREBASE_SERVICE_ACCOUNT` | servidor | JSON de la cuenta de servicio en base64 (Admin SDK). **Nunca** en git |
+| `GEMINI_API_KEY` | servidor | Clave de Gemini. Nunca llega al navegador |
+| `GEMINI_MODEL`, `GEMINI_MODEL_FALLBACK`, `GEMINI_EMBEDDING_MODEL` | servidor | IDs de modelo (verificados el 18-oct-2026) |
+| `GEMINI_TIER` | servidor | `free` exige el consentimiento de IA de cada usuario; `paid` lo hace opcional |
+| `AI_DAILY_MESSAGES`, `AI_DAILY_TOKENS` | servidor | Cuota diaria por usuario |
+| `AI_GLOBAL_DAILY_LIMIT` | servidor | Tope diario de consultas de IA de toda la app |
+| `ADMIN_EMAILS` | servidor | Correos con rol admin (`npm run seed` les pone el custom claim) |
 
-### 4. Gemini
-Crea una clave en <https://aistudio.google.com/apikey> y ponla en `GEMINI_API_KEY`. Los IDs de modelo están en variables de entorno (`GEMINI_MODEL=gemini-3.8-flash`, `GEMINI_MODEL_FALLBACK=gemini-3.5-flash-lite`, `GEMINI_EMBEDDING_MODEL=gemini-embedding-2`), verificados contra la documentación y la lista de modelos el 18-oct-2026.
+### Firebase (ya configurado para el proyecto `ironlog-fitness-6cbc9`)
+1. Proyecto en plan **Spark**; Authentication con **Correo/contraseña** y **Google**; Firestore en `us-east1` (modo producción).
+2. App web registrada → variables `NEXT_PUBLIC_FIREBASE_*`.
+3. Clave de cuenta de servicio → `FIREBASE_SERVICE_ACCOUNT` (base64).
+4. `npm run seed` publica `firestore.rules` y el catálogo. Después de que un correo de `ADMIN_EMAILS` se registre, vuelve a ejecutar `npm run seed` y cierra/abre sesión para que el rol admin aplique.
+5. Para que el panel admin muestre el uso de Firestore, da a la cuenta de servicio el rol **Monitoring Viewer** en Google Cloud IAM.
 
-### 5. Desarrollo
+## Pruebas
+
 ```bash
-npm run dev          # http://localhost:3000
-npm run check        # tipos + lint + pruebas + build
-npm run test:e2e     # Playwright (levanta un servidor en modo demo)
-npm run test:rules   # reglas de Firestore con el emulador (requiere Java)
+npm run test          # unitarias (analytics, plantillas vs weeklyVolume, recomendaciones, energía, cuotas, seed)
+npm run test:rules    # reglas de Firestore en el emulador: aislamiento entre usuarios, catálogo, admin sin acceso
+npm run test:e2e      # Playwright con emuladores: registro → verificación → onboarding → rutina → entreno sin señal → informe IA → cuota → borrar cuenta
+npm run check         # tipos + lint + unitarias + build
 ```
 
-## Despliegue en Vercel (Hobby)
-1. Importa el repositorio en <https://vercel.com/new>.
-2. En **Settings → Environment Variables** añade todas las variables de `.env.example` (sin `NEXT_PUBLIC_DEMO_MODE`). Pon `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` = tu dominio de Vercel (p. ej. `ironlog-xxx.vercel.app`): `next.config.ts` reenvía `/__/auth/*` a Firebase para que el inicio de sesión funcione en Safari/iOS.
-3. En Firebase → Authentication → Configuración → **Dominios autorizados**, añade ese dominio.
-4. Despliega.
+Los emuladores necesitan Java: el script usa un JRE portable en `.tools/` (ignorado por git) si existe, o el Java del sistema. Las pruebas E2E usan una IA simulada (`AI_FAKE=1`), que nunca se activa en producción.
 
-Límites verificados el 18-oct-2026: Vercel Hobby es para uso personal no comercial; las funciones (Fluid compute) pueden durar hasta 300 s, pero la app corta cada llamada de IA a los 50 s por diseño. Firestore Spark: 1 GiB, 50 000 lecturas, 20 000 escrituras y 20 000 borrados al día, 10 GiB/mes de salida; se reinicia a medianoche del Pacífico.
+## Despliegue (cuando toque)
+1. Importa el repo en Vercel y añade las variables de entorno (sin `NEXT_PUBLIC_USE_EMULATORS` ni `AI_FAKE`).
+2. `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` = tu dominio de Vercel (el `next.config.ts` reenvía `/__/auth/*` a Firebase para Safari/iOS) y añádelo en Firebase → Authentication → Dominios autorizados.
+3. Personaliza las plantillas de correo de Firebase (verificación y contraseña) en español.
 
-## Instalar en el celular
-- **Android (Chrome)**: abre la URL → menú ⋮ → *Instalar app*.
-- **iPhone (Safari)**: abre la URL → botón **Compartir** → **Añadir a pantalla de inicio**.
-- **PC (Chrome/Edge)**: ícono de instalar en la barra de direcciones.
-
-Inicia sesión una vez con conexión; después puedes registrar entrenamientos sin señal.
-
-## Respaldo
-**Ajustes → Respaldo de datos**: *Exportar JSON* (respaldo completo, re-importable), *Exportar CSV* (una fila por serie, medida, comida y día de actividad, para Excel/Sheets) e *Importar respaldo* (sobrescribe por id, no borra nada). Las memorias del coach vuelven como pendientes para recalcular sus embeddings.
+### Límites gratuitos y cuándo pagar
+- **Firestore Spark**: 1 GiB, 50 000 lecturas, 20 000 escrituras y 20 000 borrados al día **para todo el proyecto**. Con persistencia offline y catálogo agregado, un usuario activo hace del orden de cientos de lecturas al día: piensa en **decenas** de usuarios activos diarios, no miles. El panel admin avisa al 70 %. Pasar a **Blaze** (pago por uso) cuando la alerta salte con frecuencia.
+- **Vercel Hobby**: solo **uso personal no comercial**. Si la app cobra, tiene anuncios o se ofrece como servicio de una empresa, hace falta **Pro**. La documentación vigente (verificada el 18-oct-2026) permite funciones de hasta 300 s en Hobby; la app corta cada llamada de IA a los 50 s igualmente.
+- **Gemini capa gratuita**: límites por proyecto (ver AI Studio) y **uso del contenido para mejorar productos de Google**. Para usuarios reales conviene la capa de pago (`GEMINI_TIER=paid`), que además elimina ese uso de datos.
+- **Abuso**: hay límite por usuario y por IP en los endpoints de IA y Firebase Auth protege el registro. Antes de abrir al público, activa **Firebase App Check** con reCAPTCHA (gratis dentro de su cuota) y la protección contra enumeración de correos.
 
 ## Privacidad
-- Solo tu cuenta (`ALLOWED_EMAIL`, email verificado) puede leer o escribir `users/{uid}/**`; lo exigen las reglas de Firestore y cada endpoint de IA verifica el token con Firebase Admin.
-- La clave de Gemini y la cuenta de servicio solo existen en el servidor.
-- **Aviso — capa gratuita de Gemini**: según la página de precios de Google, en la capa gratuita **el contenido enviado se usa para mejorar los productos de Google**. La app envía solo métricas (series, cargas, medidas, comidas, notas), nunca tu nombre ni tu email. Si no quieres esto, no uses las funciones de IA o pasa a un plan de pago.
-- Interacciones de Gemini: en capa gratuita se retienen 1 día; el historial de chat vive en tu Firestore.
+Política completa en `/privacidad`. Resumen: cada usuario solo puede leer/escribir `users/{su uid}/**`; el admin solo ve metadatos de cuentas y contadores agregados; la IA recibe métricas sin nombre, correo ni fecha de nacimiento, y solo con consentimiento; exportar (JSON/CSV) y borrar la cuenta están en Ajustes; los logs del servidor no incluyen datos de salud.
 
-## Arquitectura
-
-```
-app/(app)/*            pantallas (componentes cliente; leen Firestore con caché offline)
-app/api/ai/*           chat (streaming + herramientas), report, meal-estimate, menu, substitute, memory
-lib/analytics/*        funciones puras: unidades, fechas, e1RM, doble progresión, volumen, peso, asistencia, nutrición (con pruebas)
-lib/ai/*               cliente Gemini, herramientas, esquemas Zod, memoria RAG, prompt versionado (prompts/coach.v1.ts)
-lib/data/*             datos semilla: ejercicios + cadenas de alternativas, planes, alimentos, marcas iniciales
-lib/firebase/*         SDK cliente (persistentLocalCache multi-pestaña) y Admin
-public/sw.js           service worker: shell offline (los datos offline los maneja Firestore)
-firestore.rules.tmpl   plantilla de reglas (el email se inyecta al generar)
-```
-
-Decisiones:
-- **Interactions API** (`ai.interactions.create`) con `previous_interaction_id` para encadenar herramientas dentro de una petición; `system_instruction`, `tools` y `generation_config` se repiten en cada llamada.
-- **Herramientas** de solo lectura validadas con Zod y filtradas por el `uid` verificado. `propose_plan_change` y `save_memory` solo crean elementos *pendientes*.
-- **Informe semanal**: el servidor ejecuta las mismas herramientas de forma determinista y pide JSON con esquema (`response_format`), validado con Zod; con menos de 2 semanas de datos el veredicto es `insufficient_data`. Se genera solo al abrir la app si hay una semana cerrada sin informe (sin cron).
-- **RAG**: `gemini-embedding-2` a 768 dimensiones (sin `task_type`; el propósito va en el prefijo del texto), guardado con `FieldValue.vector`, similitud coseno en servidor sobre las últimas 500 memorias.
-- **Errores de IA**: reintento exponencial en 429/5xx, modelo de respaldo, límite propio por minuto y por día (`AI_DAILY_LIMIT`), mensajes amables; nunca se pierde un dato por un fallo de IA.
-- **weeklyStats** se calcula en el cliente al guardar una sesión (funciona sin señal); las herramientas de IA recalculan desde los datos crudos.
-
-## Mejoras futuras
-- Fotos de progreso (Firebase Storage requiere plan de pago en proyectos nuevos; pendiente de evaluar).
-- Base de conocimiento con artículos/PDF usando **File Search** de Gemini (`fileSearchStores` + `gemini-embedding-2`).
-- Búsqueda vectorial nativa con `findNearest` de Firestore si las memorias crecen mucho.
+## Decisiones legales y comerciales pendientes (no técnicas)
+1. **Responsable del tratamiento**: quién es (persona o empresa), datos de contacto y un correo para solicitudes de privacidad. Colombia: Ley 1581 de 2012 (datos sensibles de salud requieren autorización expresa) y registro en el RNBD de la SIC si aplica.
+2. **Términos y condiciones** (uso, responsabilidad, edad mínima, suspensión de cuentas) revisados por un abogado.
+3. **Transferencia internacional de datos** (servidores de Google/Vercel en EE. UU.) y su mención en la política.
+4. **Modelo comercial**: si habrá cobro, publicidad o empresa detrás → Vercel Pro, Firebase Blaze y Gemini de pago.
+5. **Retención**: plazo de conservación de cuentas inactivas y de copias.
+6. **Revisión profesional** del aviso de salud y de los textos de nutrición (nutricionista/médico deportivo).
+7. Política para **menores**: hoy se bloquea por fecha de nacimiento declarada; decidir si se necesita verificación adicional.
+8. Plan de respuesta ante **incidentes de seguridad** y notificación a usuarios.
 
 ## Fuentes de las reglas de coaching
-Volumen: Baz-Valle 2022; Schoenfeld 2017. Frecuencia: Schoenfeld 2016. Cercanía al fallo: Refalo 2022. Grasa abdominal: Brobakken 2023. Proteína: Morton 2018 (BJSM). Creatina: ISSN (Kreider 2017). Son heurísticas, no consejo médico.
+Volumen: Baz-Valle 2022; Schoenfeld 2017. Frecuencia: Schoenfeld 2016. Cercanía al fallo: Refalo 2022. Proteína: Morton 2018. Energía: Mifflin-St Jeor 1990. Creatina: ISSN (Kreider 2017). Programas: StrongLifts 5×5, GZCLP, PHUL, PPL, Arnold split (ver `data/seed/rutinas_seed.json`). Son heurísticas, no consejo médico.
