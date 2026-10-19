@@ -1,6 +1,6 @@
 {
  "schemaVersion": 3,
- "dataVersion": "2026-10-18",
+ "dataVersion": "2026-10-19",
  "language": "es",
  "currency": "COP",
  "goals": {
@@ -2166,6 +2166,14 @@
    "cues": "",
    "fallbackChain": [
     {
+     "exerciseId": "hip_thrust_machine",
+     "when": "Si hay máquina de hip thrust o la barra está ocupada"
+    },
+    {
+     "exerciseId": "db_hip_thrust",
+     "when": "Si no hay barra ni máquina"
+    },
+    {
      "exerciseId": "glute_bridge",
      "when": "Si el equipo está ocupado más de ~3 min o no existe en tu gimnasio"
     }
@@ -2191,6 +2199,10 @@
    "displayUnit": "lb",
    "cues": "",
    "fallbackChain": [
+    {
+     "exerciseId": "single_leg_glute_bridge",
+     "when": "Si el puente con dos piernas ya es fácil"
+    },
     {
      "exerciseId": "hip_thrust",
      "when": "Si el equipo está ocupado más de ~3 min o no existe en tu gimnasio"
@@ -4136,6 +4148,204 @@
     },
     {
      "exerciseId": "elliptical_steady",
+     "when": "Si la opción anterior tampoco está disponible"
+    }
+   ],
+   "available": true,
+   "source": "seed"
+  },
+  {
+   "id": "hip_thrust_machine",
+   "name": "Hip thrust en máquina",
+   "family": "puente_cadera",
+   "primaryMuscle": "glutes",
+   "secondaryMuscles": [
+    "hamstrings"
+   ],
+   "equipment": [
+    "machine"
+   ],
+   "spotterFree": true,
+   "isCompound": true,
+   "weightIsPerHand": false,
+   "displayUnit": "lb",
+   "cues": "Mentón al pecho, costillas abajo; sube hasta extender la cadera y aprieta 1 s arriba.",
+   "fallbackChain": [
+    {
+     "exerciseId": "hip_thrust",
+     "when": "Si el equipo está ocupado más de ~3 min o no existe en tu gimnasio"
+    },
+    {
+     "exerciseId": "db_hip_thrust",
+     "when": "Si la opción anterior tampoco está disponible"
+    },
+    {
+     "exerciseId": "glute_bridge",
+     "when": "Si notas molestia articular: cambia ángulo o agarre"
+    }
+   ],
+   "available": true,
+   "source": "seed"
+  },
+  {
+   "id": "db_hip_thrust",
+   "name": "Hip thrust con mancuerna",
+   "family": "puente_cadera",
+   "primaryMuscle": "glutes",
+   "secondaryMuscles": [
+    "hamstrings"
+   ],
+   "equipment": [
+    "dumbbell",
+    "bench"
+   ],
+   "spotterFree": true,
+   "isCompound": true,
+   "weightIsPerHand": false,
+   "displayUnit": "lb",
+   "cues": "Espalda alta apoyada en el banco, mancuerna sobre la cadera (con una toalla). Sube hasta extender la cadera.",
+   "fallbackChain": [
+    {
+     "exerciseId": "glute_bridge",
+     "when": "Si el equipo está ocupado más de ~3 min o no existe en tu gimnasio"
+    },
+    {
+     "exerciseId": "single_leg_glute_bridge",
+     "when": "Si la opción anterior tampoco está disponible"
+    }
+   ],
+   "available": true,
+   "source": "seed"
+  },
+  {
+   "id": "single_leg_glute_bridge",
+   "name": "Puente de glúteo a una pierna",
+   "family": "puente_cadera",
+   "primaryMuscle": "glutes",
+   "secondaryMuscles": [
+    "hamstrings"
+   ],
+   "equipment": [
+    "bodyweight"
+   ],
+   "spotterFree": true,
+   "isCompound": false,
+   "weightIsPerHand": false,
+   "displayUnit": "lb",
+   "cues": "Talón cerca del glúteo, la otra pierna arriba. Cadera nivelada al subir.",
+   "fallbackChain": [
+    {
+     "exerciseId": "glute_bridge",
+     "when": "Si el equipo está ocupado más de ~3 min o no existe en tu gimnasio"
+    }
+   ],
+   "available": true,
+   "source": "seed"
+  },
+  {
+   "id": "cable_kickback",
+   "name": "Patada de glúteo en polea",
+   "family": "patada_gluteo",
+   "primaryMuscle": "glutes",
+   "secondaryMuscles": [],
+   "equipment": [
+    "cable"
+   ],
+   "spotterFree": true,
+   "isCompound": false,
+   "weightIsPerHand": false,
+   "displayUnit": "lb",
+   "cues": "Tobillera en la polea baja, torso algo inclinado; lleva la pierna atrás sin arquear la zona lumbar.",
+   "fallbackChain": [
+    {
+     "exerciseId": "band_kickback",
+     "when": "Si el equipo está ocupado más de ~3 min o no existe en tu gimnasio"
+    },
+    {
+     "exerciseId": "single_leg_glute_bridge",
+     "when": "Si la opción anterior tampoco está disponible"
+    }
+   ],
+   "available": true,
+   "source": "seed"
+  },
+  {
+   "id": "band_kickback",
+   "name": "Patada de glúteo en cuadrupedia (con banda)",
+   "family": "patada_gluteo",
+   "primaryMuscle": "glutes",
+   "secondaryMuscles": [],
+   "equipment": [
+    "band"
+   ],
+   "spotterFree": true,
+   "isCompound": false,
+   "weightIsPerHand": false,
+   "displayUnit": "lb",
+   "cues": "En cuatro apoyos, banda en los pies o rodillas; empuja con el talón hacia atrás y arriba.",
+   "fallbackChain": [
+    {
+     "exerciseId": "single_leg_glute_bridge",
+     "when": "Si el equipo está ocupado más de ~3 min o no existe en tu gimnasio"
+    }
+   ],
+   "available": true,
+   "source": "seed"
+  },
+  {
+   "id": "cable_pull_through",
+   "name": "Pull-through en polea",
+   "family": "bisagra_cadera",
+   "primaryMuscle": "glutes",
+   "secondaryMuscles": [
+    "hamstrings"
+   ],
+   "equipment": [
+    "cable"
+   ],
+   "spotterFree": true,
+   "isCompound": true,
+   "weightIsPerHand": false,
+   "displayUnit": "lb",
+   "cues": "De espaldas a la polea baja, cuerda entre las piernas; cadera atrás y extiende apretando glúteo.",
+   "fallbackChain": [
+    {
+     "exerciseId": "db_rdl",
+     "when": "Si el equipo está ocupado más de ~3 min o no existe en tu gimnasio"
+    },
+    {
+     "exerciseId": "back_extension",
+     "when": "Si la opción anterior tampoco está disponible"
+    },
+    {
+     "exerciseId": "glute_bridge",
+     "when": "Si notas molestia articular: cambia ángulo o agarre"
+    }
+   ],
+   "available": true,
+   "source": "seed"
+  },
+  {
+   "id": "cable_hip_abduction",
+   "name": "Abducción de cadera de pie en polea",
+   "family": "abduccion",
+   "primaryMuscle": "glutes",
+   "secondaryMuscles": [],
+   "equipment": [
+    "cable"
+   ],
+   "spotterFree": true,
+   "isCompound": false,
+   "weightIsPerHand": false,
+   "displayUnit": "lb",
+   "cues": "Tobillera en la polea baja, pierna de afuera; sube de lado sin inclinar el torso.",
+   "fallbackChain": [
+    {
+     "exerciseId": "machine_hip_abduction",
+     "when": "Si el equipo está ocupado más de ~3 min o no existe en tu gimnasio"
+    },
+    {
+     "exerciseId": "band_lateral_walk",
      "when": "Si la opción anterior tampoco está disponible"
     }
    ],
@@ -16488,6 +16698,2951 @@
     "Doble progresión: sube reps dentro del rango; al tope, sube peso o tensión de banda.",
     "Si no puedes subir peso, alarga el rango (hasta 30 reps cerca del fallo) o haz la bajada en 3 s."
    ]
+  },
+  {
+   "id": "M1",
+   "name": "Glúteo y pierna · cuerpo completo 3 días",
+   "goal": "hipertrofia",
+   "daysPerWeek": 3,
+   "level": "principiante",
+   "split": "full_body_glute",
+   "recommendedForNovice": true,
+   "priorities": [
+    "glúteo",
+    "pierna",
+    "constancia"
+   ],
+   "knownAs": "Glúteo 3 veces por semana",
+   "bestFor": "Empezar a crecer glúteo y pierna con 3 días, sin dejar el torso.",
+   "weekdayMap": {
+    "default": {
+     "A": 1,
+     "B": 3,
+     "C": 5
+    }
+   },
+   "rationale": "Glúteo en las 3 sesiones (frecuencia 3) con un ejercicio de empuje de cadera, uno de sentadilla o zancada y una bisagra. Hip thrust y sentadilla dieron un crecimiento de glúteo parecido en 9 semanas (Plotkin 2023, MRI); la sentadilla además creció más cuádriceps y aductores. Por eso se combinan: un empuje de cadera, una sentadilla o zancada profunda y una bisagra en cada semana. El torso recibe lo justo para progresar.",
+   "communityNote": "No existe una rutina «de mujer» fisiológicamente distinta: con el mismo entrenamiento, mujeres y hombres ganan músculo en proporción parecida (Roberts 2020; Refalo 2025). Lo que cambia es el objetivo, y esta rutina reparte el volumen según el tuyo. Síntesis de IronLog, no un programa publicado.",
+   "caveats": "El torso queda por debajo de ~10 series por semana a propósito; si también quieres priorizarlo, usa Todo el cuerpo 3 días.",
+   "sessions": [
+    {
+     "key": "A",
+     "name": "Día A",
+     "focus": "Glúteo (hip thrust) + espalda",
+     "items": [
+      {
+       "exerciseId": "hip_thrust",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 120,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "leg_press",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Pies altos y algo abiertos en la plataforma: más glúteo y femoral.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_leg_curl",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "machine_hip_abduction",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 25,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lat_pulldown",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_shoulder_press",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "plank",
+       "sets": 2,
+       "repMin": 30,
+       "repMax": 60,
+       "restSec": 45,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "seconds"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 18,
+     "exerciseCount": 7
+    },
+    {
+     "key": "B",
+     "name": "Día B",
+     "focus": "Sentadilla + bisagra + pecho",
+     "items": [
+      {
+       "exerciseId": "smith_squat",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 120,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Baja tan profundo como controles: la sentadilla profunda trabaja más glúteo.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_rdl",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "bulgarian_split_squat",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Torso algo inclinado hacia delante y paso largo: más glúteo.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_kickback",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_cable_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_press_machine",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "face_pull",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 17,
+     "exerciseCount": 7
+    },
+    {
+     "key": "C",
+     "name": "Día C",
+     "focus": "Glúteo unilateral + torso",
+     "items": [
+      {
+       "exerciseId": "hip_thrust_machine",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "step_up",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Escalón a la altura de la rodilla; empuja con el talón de la pierna de arriba.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lying_leg_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "back_extension",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Espalda alta un poco redondeada y pies girados hacia fuera: el glúteo hace el trabajo.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "neutral_pulldown",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "incline_db_press",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lateral_raise_db",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 16,
+     "exerciseCount": 7
+    }
+   ],
+   "requiresWeekend": false,
+   "sessionMinutesRange": [
+    50,
+    60
+   ],
+   "cardioMinutesPerWeek": 0,
+   "sessionsPerWeek": 3,
+   "category": "mujeres",
+   "place": "gym",
+   "emphasis": "gluteo_pierna",
+   "tags": [
+    "gluteo",
+    "pierna",
+    "cuerpo_completo"
+   ],
+   "source": {
+    "name": "Síntesis IronLog (Plotkin et al. 2023; Roberts et al. 2020; ACSM 2026)",
+    "url": "https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2023.1279170/full",
+    "verification": "sintesis"
+   },
+   "progressionRules": [
+    "Doble progresión: cuando completes el tope del rango en todas las series con 1-2 repeticiones en reserva, sube el peso lo mínimo posible.",
+    "En hip thrust aprieta 1 s arriba en cada repetición; si la zona lumbar trabaja más que el glúteo, baja el peso.",
+    "Cada 6-8 semanas, una semana con la mitad de series para recuperar."
+   ],
+   "recommendedAddOns": [
+    "AO_CORE"
+   ]
+  },
+  {
+   "id": "M2",
+   "name": "Glúteo y pierna · 4 días (pierna-torso)",
+   "goal": "hipertrofia",
+   "daysPerWeek": 4,
+   "level": "principiante-intermedio",
+   "split": "lower_upper_glute",
+   "recommendedForNovice": true,
+   "priorities": [
+    "glúteo",
+    "pierna"
+   ],
+   "knownAs": "Pierna-torso con prioridad de glúteo",
+   "bestFor": "Crecer glúteo y pierna con 4 días: 2 de pierna completa y 2 de torso con un extra de glúteo.",
+   "weekdayMap": {
+    "classic": {
+     "L1": 1,
+     "U1": 2,
+     "L2": 4,
+     "U2": 5
+    },
+    "extraTuesday": {
+     "L1": 1,
+     "U1": 2,
+     "L2": 3,
+     "U2": 5
+    },
+    "extraThursday": {
+     "L1": 1,
+     "U1": 3,
+     "L2": 4,
+     "U2": 5
+    }
+   },
+   "rationale": "Dos días de pierna con enfoques distintos (cadera / cuádriceps) y un extra corto de glúteo en los días de torso: glúteo 4 veces por semana. Hip thrust y sentadilla dieron un crecimiento de glúteo parecido en 9 semanas (Plotkin 2023, MRI); la sentadilla además creció más cuádriceps y aductores. Por eso se combinan: un empuje de cadera, una sentadilla o zancada profunda y una bisagra en cada semana.",
+   "communityNote": "No existe una rutina «de mujer» fisiológicamente distinta: con el mismo entrenamiento, mujeres y hombres ganan músculo en proporción parecida (Roberts 2020; Refalo 2025). Lo que cambia es el objetivo, y esta rutina reparte el volumen según el tuyo. Síntesis de IronLog, no un programa publicado.",
+   "caveats": "Si el hip thrust con barra te queda incómodo, la app usa la máquina o la mancuerna. Mantén la técnica antes que el peso.",
+   "sessions": [
+    {
+     "key": "L1",
+     "name": "Pierna 1",
+     "focus": "Glúteo: cadera",
+     "items": [
+      {
+       "exerciseId": "hip_thrust",
+       "sets": 4,
+       "repMin": 6,
+       "repMax": 10,
+       "restSec": 150,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_rdl",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "bulgarian_split_squat",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Paso largo y torso algo inclinado: más glúteo.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_leg_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "machine_hip_abduction",
+       "sets": 3,
+       "repMin": 15,
+       "repMax": 25,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 15,
+     "exerciseCount": 5
+    },
+    {
+     "key": "U1",
+     "name": "Torso A",
+     "focus": "Espalda, pecho y hombro",
+     "items": [
+      {
+       "exerciseId": "lat_pulldown",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_press_machine",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_cable_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_shoulder_press",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lateral_raise_db",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "face_pull",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_kickback",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Extra de glúteo al final: poco cansancio y no compite con la pierna de mañana.",
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 18,
+     "exerciseCount": 7
+    },
+    {
+     "key": "L2",
+     "name": "Pierna 2",
+     "focus": "Cuádriceps y glúteo",
+     "items": [
+      {
+       "exerciseId": "smith_squat",
+       "sets": 4,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 150,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Baja profundo: más recorrido, más glúteo.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "leg_press",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lying_leg_curl",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_pull_through",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "calf_raise_standing",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 16,
+     "exerciseCount": 5
+    },
+    {
+     "key": "U2",
+     "name": "Torso B",
+     "focus": "Espalda, pecho y brazos",
+     "items": [
+      {
+       "exerciseId": "neutral_pulldown",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "incline_db_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_supported_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_lateral_raise",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "overhead_cable_ext",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_hip_abduction",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_crunch",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 19,
+     "exerciseCount": 8
+    }
+   ],
+   "requiresWeekend": false,
+   "sessionMinutesRange": [
+    50,
+    65
+   ],
+   "cardioMinutesPerWeek": 0,
+   "sessionsPerWeek": 4,
+   "category": "mujeres",
+   "place": "gym",
+   "emphasis": "gluteo_pierna",
+   "tags": [
+    "gluteo",
+    "pierna",
+    "torso_pierna"
+   ],
+   "source": {
+    "name": "Síntesis IronLog (Plotkin et al. 2023; Roberts et al. 2020; ACSM 2026)",
+    "url": "https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2023.1279170/full",
+    "verification": "sintesis"
+   },
+   "progressionRules": [
+    "Doble progresión: cuando completes el tope del rango en todas las series con 1-2 repeticiones en reserva, sube el peso lo mínimo posible.",
+    "En hip thrust aprieta 1 s arriba en cada repetición; si la zona lumbar trabaja más que el glúteo, baja el peso.",
+    "Cada 6-8 semanas, una semana con la mitad de series para recuperar."
+   ]
+  },
+  {
+   "id": "M3",
+   "name": "Glúteo y pierna · 5 días",
+   "goal": "hipertrofia",
+   "daysPerWeek": 5,
+   "level": "intermedio",
+   "split": "glute_focus_5",
+   "recommendedForNovice": false,
+   "priorities": [
+    "glúteo",
+    "pierna"
+   ],
+   "knownAs": "Glúteo 3 días + torso 2 días",
+   "bestFor": "Quien ya entrena hace 6+ meses y quiere el máximo de glúteo con 5 días.",
+   "weekdayMap": {
+    "default": {
+     "G1": 1,
+     "U1": 2,
+     "Q1": 3,
+     "U2": 4,
+     "G2": 5
+    }
+   },
+   "rationale": "Tres días de pierna (glúteo pesado, cuádriceps, glúteo y femoral) y dos de torso. El glúteo queda cerca de 20 series semanales, repartidas para no pasar de ~10 por sesión. Hip thrust y sentadilla dieron un crecimiento de glúteo parecido en 9 semanas (Plotkin 2023, MRI); la sentadilla además creció más cuádriceps y aductores. Por eso se combinan: un empuje de cadera, una sentadilla o zancada profunda y una bisagra en cada semana.",
+   "communityNote": "No existe una rutina «de mujer» fisiológicamente distinta: con el mismo entrenamiento, mujeres y hombres ganan músculo en proporción parecida (Roberts 2020; Refalo 2025). Lo que cambia es el objetivo, y esta rutina reparte el volumen según el tuyo. Síntesis de IronLog, no un programa publicado.",
+   "caveats": "Mucho volumen de pierna: si las rodillas o la zona lumbar se cargan, quita una serie de cada ejercicio de pierna antes que un día.",
+   "sessions": [
+    {
+     "key": "G1",
+     "name": "Glúteo pesado",
+     "focus": "Hip thrust y bisagra",
+     "items": [
+      {
+       "exerciseId": "hip_thrust",
+       "sets": 4,
+       "repMin": 6,
+       "repMax": 10,
+       "restSec": 150,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "barbell_rdl",
+       "sets": 3,
+       "repMin": 6,
+       "repMax": 10,
+       "restSec": 150,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_lunge",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Zancada hacia atrás y paso largo.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "machine_hip_abduction",
+       "sets": 3,
+       "repMin": 15,
+       "repMax": 25,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 13,
+     "exerciseCount": 4
+    },
+    {
+     "key": "U1",
+     "name": "Torso A",
+     "focus": "Espalda, pecho y hombro",
+     "items": [
+      {
+       "exerciseId": "lat_pulldown",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_press_machine",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_cable_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_shoulder_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lateral_raise_db",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "face_pull",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 17,
+     "exerciseCount": 6
+    },
+    {
+     "key": "Q1",
+     "name": "Cuádriceps",
+     "focus": "Sentadilla y prensa",
+     "items": [
+      {
+       "exerciseId": "smith_squat",
+       "sets": 4,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 150,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Baja profundo.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "leg_press",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "leg_extension",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_leg_curl",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "calf_raise_standing",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 16,
+     "exerciseCount": 5
+    },
+    {
+     "key": "U2",
+     "name": "Torso B",
+     "focus": "Espalda, pecho y brazos",
+     "items": [
+      {
+       "exerciseId": "neutral_pulldown",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "incline_db_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_supported_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_lateral_raise",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "overhead_cable_ext",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_crunch",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 18,
+     "exerciseCount": 7
+    },
+    {
+     "key": "G2",
+     "name": "Glúteo y femoral",
+     "focus": "Volumen de glúteo",
+     "items": [
+      {
+       "exerciseId": "hip_thrust_machine",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "step_up",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lying_leg_curl",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_kickback",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_hip_abduction",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 25,
+     "totalSets": 13,
+     "exerciseCount": 5
+    }
+   ],
+   "requiresWeekend": false,
+   "sessionMinutesRange": [
+    50,
+    65
+   ],
+   "cardioMinutesPerWeek": 0,
+   "sessionsPerWeek": 5,
+   "category": "mujeres",
+   "place": "gym",
+   "emphasis": "gluteo_pierna",
+   "tags": [
+    "gluteo",
+    "pierna",
+    "alto_volumen"
+   ],
+   "source": {
+    "name": "Síntesis IronLog (Plotkin et al. 2023; Roberts et al. 2020; ACSM 2026)",
+    "url": "https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2023.1279170/full",
+    "verification": "sintesis"
+   },
+   "progressionRules": [
+    "Doble progresión: cuando completes el tope del rango en todas las series con 1-2 repeticiones en reserva, sube el peso lo mínimo posible.",
+    "En hip thrust aprieta 1 s arriba en cada repetición; si la zona lumbar trabaja más que el glúteo, baja el peso.",
+    "Cada 6-8 semanas, una semana con la mitad de series para recuperar."
+   ],
+   "deloadRules": [
+    "Cada 6-8 semanas, o si 2 sesiones seguidas bajan las repeticiones: una semana con la mitad de series."
+   ]
+  },
+  {
+   "id": "M4",
+   "name": "Pierna completa · 4 días (pierna-torso)",
+   "goal": "hipertrofia",
+   "daysPerWeek": 4,
+   "level": "principiante-intermedio",
+   "split": "lower_upper_legs",
+   "recommendedForNovice": true,
+   "priorities": [
+    "cuádriceps",
+    "femoral",
+    "glúteo",
+    "pantorrilla"
+   ],
+   "knownAs": "Pierna-torso con prioridad de pierna",
+   "bestFor": "Crecer la pierna completa (no solo el glúteo): cuádriceps, femorales, glúteo y pantorrilla.",
+   "weekdayMap": {
+    "classic": {
+     "L1": 1,
+     "U1": 2,
+     "L2": 4,
+     "U2": 5
+    },
+    "extraTuesday": {
+     "L1": 1,
+     "U1": 2,
+     "L2": 3,
+     "U2": 5
+    },
+    "extraThursday": {
+     "L1": 1,
+     "U1": 3,
+     "L2": 4,
+     "U2": 5
+    }
+   },
+   "rationale": "Un día dominante de cuádriceps y otro de cadera; cada músculo de la pierna 2 veces por semana con ~10-14 series. La sentadilla profunda y la prensa crecen cuádriceps y aductores además del glúteo (Plotkin 2023).",
+   "communityNote": "No existe una rutina «de mujer» fisiológicamente distinta: con el mismo entrenamiento, mujeres y hombres ganan músculo en proporción parecida (Roberts 2020; Refalo 2025). Lo que cambia es el objetivo, y esta rutina reparte el volumen según el tuyo. Síntesis de IronLog, no un programa publicado.",
+   "caveats": "Si buscas sobre todo glúteo, Glúteo y pierna 4 días lo prioriza más.",
+   "sessions": [
+    {
+     "key": "L1",
+     "name": "Pierna 1",
+     "focus": "Cuádriceps",
+     "items": [
+      {
+       "exerciseId": "hack_squat_machine",
+       "sets": 4,
+       "repMin": 6,
+       "repMax": 10,
+       "restSec": 150,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "leg_press",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "leg_extension",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_leg_curl",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "calf_raise_standing",
+       "sets": 4,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 17,
+     "exerciseCount": 5
+    },
+    {
+     "key": "U1",
+     "name": "Torso A",
+     "focus": "Espalda, pecho y hombro",
+     "items": [
+      {
+       "exerciseId": "lat_pulldown",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_press_machine",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_cable_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_shoulder_press",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lateral_raise_db",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "face_pull",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 16,
+     "exerciseCount": 6
+    },
+    {
+     "key": "L2",
+     "name": "Pierna 2",
+     "focus": "Femoral y glúteo",
+     "items": [
+      {
+       "exerciseId": "db_rdl",
+       "sets": 4,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 120,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "hip_thrust",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 120,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "bulgarian_split_squat",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lying_leg_curl",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_calf_raise",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 16,
+     "exerciseCount": 5
+    },
+    {
+     "key": "U2",
+     "name": "Torso B",
+     "focus": "Espalda, pecho y brazos",
+     "items": [
+      {
+       "exerciseId": "neutral_pulldown",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "incline_db_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_supported_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_lateral_raise",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "overhead_cable_ext",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_crunch",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 17,
+     "exerciseCount": 7
+    }
+   ],
+   "requiresWeekend": false,
+   "sessionMinutesRange": [
+    50,
+    65
+   ],
+   "cardioMinutesPerWeek": 0,
+   "sessionsPerWeek": 4,
+   "category": "mujeres",
+   "place": "gym",
+   "emphasis": "pierna",
+   "tags": [
+    "pierna",
+    "torso_pierna"
+   ],
+   "source": {
+    "name": "Síntesis IronLog (Plotkin et al. 2023; Roberts et al. 2020; ACSM 2026)",
+    "url": "https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2023.1279170/full",
+    "verification": "sintesis"
+   },
+   "progressionRules": [
+    "Doble progresión: cuando completes el tope del rango en todas las series con 1-2 repeticiones en reserva, sube el peso lo mínimo posible.",
+    "Cada 6-8 semanas, una semana con la mitad de series para recuperar."
+   ]
+  },
+  {
+   "id": "M5",
+   "name": "Todo el cuerpo · 3 días",
+   "goal": "hipertrofia",
+   "daysPerWeek": 3,
+   "level": "principiante",
+   "split": "full_body",
+   "recommendedForNovice": true,
+   "priorities": [
+    "todo el cuerpo",
+    "constancia"
+   ],
+   "knownAs": "Cuerpo completo equilibrado",
+   "bestFor": "Trabajar todo el cuerpo de forma pareja con 3 días, con un poco más de glúteo que una rutina estándar.",
+   "weekdayMap": {
+    "default": {
+     "A": 1,
+     "B": 3,
+     "C": 5
+    }
+   },
+   "rationale": "Cada sesión trabaja pierna, empuje, tracción y hombro; cada músculo grande 2-3 veces por semana con ~10 series. Las mujeres suelen ganar fuerza de torso rápido al empezar (Roberts 2020), así que el torso no se descuida.",
+   "communityNote": "No existe una rutina «de mujer» fisiológicamente distinta: con el mismo entrenamiento, mujeres y hombres ganan músculo en proporción parecida (Roberts 2020; Refalo 2025). Lo que cambia es el objetivo, y esta rutina reparte el volumen según el tuyo. Síntesis de IronLog, no un programa publicado.",
+   "caveats": "Las sesiones son largas (~60 min); si vas justa de tiempo, haz solo los 5 primeros ejercicios.",
+   "sessions": [
+    {
+     "key": "A",
+     "name": "Día A",
+     "focus": "Cuerpo completo",
+     "items": [
+      {
+       "exerciseId": "smith_squat",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 120,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_press_machine",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lat_pulldown",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "hip_thrust",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lateral_raise_db",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "pushdown_rope",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "plank",
+       "sets": 2,
+       "repMin": 30,
+       "repMax": 60,
+       "restSec": 45,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "seconds"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 18,
+     "exerciseCount": 7
+    },
+    {
+     "key": "B",
+     "name": "Día B",
+     "focus": "Cuerpo completo",
+     "items": [
+      {
+       "exerciseId": "db_rdl",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 120,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_shoulder_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_cable_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "leg_press",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "incline_db_press",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "face_pull",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 18,
+     "exerciseCount": 7
+    },
+    {
+     "key": "C",
+     "name": "Día C",
+     "focus": "Cuerpo completo",
+     "items": [
+      {
+       "exerciseId": "bulgarian_split_squat",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "incline_db_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_supported_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_leg_curl",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "machine_hip_abduction",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 25,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_lateral_raise",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_crunch",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 18,
+     "exerciseCount": 7
+    }
+   ],
+   "requiresWeekend": false,
+   "sessionMinutesRange": [
+    50,
+    60
+   ],
+   "cardioMinutesPerWeek": 0,
+   "sessionsPerWeek": 3,
+   "category": "mujeres",
+   "place": "gym",
+   "emphasis": "equilibrado",
+   "tags": [
+    "cuerpo_completo"
+   ],
+   "source": {
+    "name": "Síntesis IronLog (Roberts et al. 2020; Refalo et al. 2025; ACSM 2026)",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32218059/",
+    "verification": "sintesis"
+   },
+   "progressionRules": [
+    "Doble progresión: cuando completes el tope del rango en todas las series con 1-2 repeticiones en reserva, sube el peso lo mínimo posible."
+   ]
+  },
+  {
+   "id": "M6",
+   "name": "Todo el cuerpo · 4 días (pierna-torso)",
+   "goal": "hipertrofia",
+   "daysPerWeek": 4,
+   "level": "principiante-intermedio",
+   "split": "lower_upper",
+   "recommendedForNovice": true,
+   "priorities": [
+    "todo el cuerpo"
+   ],
+   "knownAs": "Pierna-torso equilibrado",
+   "bestFor": "Trabajar todo de forma pareja con 4 días: 2 de pierna y 2 de torso.",
+   "weekdayMap": {
+    "classic": {
+     "L1": 1,
+     "U1": 2,
+     "L2": 4,
+     "U2": 5
+    },
+    "extraTuesday": {
+     "L1": 1,
+     "U1": 2,
+     "L2": 3,
+     "U2": 5
+    },
+    "extraThursday": {
+     "L1": 1,
+     "U1": 3,
+     "L2": 4,
+     "U2": 5
+    }
+   },
+   "rationale": "Cada músculo 2 veces por semana con ~10-14 series, el rango con mejor relación beneficio-tiempo según ACSM 2026. El glúteo tiene un ejercicio directo en cada día de pierna.",
+   "communityNote": "No existe una rutina «de mujer» fisiológicamente distinta: con el mismo entrenamiento, mujeres y hombres ganan músculo en proporción parecida (Roberts 2020; Refalo 2025). Lo que cambia es el objetivo, y esta rutina reparte el volumen según el tuyo. Síntesis de IronLog, no un programa publicado.",
+   "caveats": "Si con el tiempo quieres más glúteo, cambia a Glúteo y pierna 4 días: tiene el mismo esquema.",
+   "sessions": [
+    {
+     "key": "L1",
+     "name": "Pierna 1",
+     "focus": "Cuádriceps y glúteo",
+     "items": [
+      {
+       "exerciseId": "smith_squat",
+       "sets": 4,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 150,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "hip_thrust",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "leg_extension",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_leg_curl",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "calf_raise_standing",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 15,
+     "exerciseCount": 5
+    },
+    {
+     "key": "U1",
+     "name": "Torso A",
+     "focus": "Espalda, pecho y hombro",
+     "items": [
+      {
+       "exerciseId": "lat_pulldown",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_press_machine",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_cable_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_shoulder_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lateral_raise_db",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "face_pull",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "pushdown_rope",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 19,
+     "exerciseCount": 7
+    },
+    {
+     "key": "L2",
+     "name": "Pierna 2",
+     "focus": "Femoral y glúteo",
+     "items": [
+      {
+       "exerciseId": "db_rdl",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 120,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "leg_press",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "bulgarian_split_squat",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lying_leg_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "machine_hip_abduction",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 25,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 30,
+     "totalSets": 12,
+     "exerciseCount": 5
+    },
+    {
+     "key": "U2",
+     "name": "Torso B",
+     "focus": "Espalda, pecho y brazos",
+     "items": [
+      {
+       "exerciseId": "neutral_pulldown",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "incline_db_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "pec_deck",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_supported_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_lateral_raise",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "overhead_cable_ext",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_crunch",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 20,
+     "exerciseCount": 8
+    }
+   ],
+   "requiresWeekend": false,
+   "sessionMinutesRange": [
+    50,
+    60
+   ],
+   "cardioMinutesPerWeek": 0,
+   "sessionsPerWeek": 4,
+   "category": "mujeres",
+   "place": "gym",
+   "emphasis": "equilibrado",
+   "tags": [
+    "torso_pierna"
+   ],
+   "source": {
+    "name": "Síntesis IronLog (Roberts et al. 2020; Refalo et al. 2025; ACSM 2026)",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32218059/",
+    "verification": "sintesis"
+   },
+   "progressionRules": [
+    "Doble progresión: cuando completes el tope del rango en todas las series con 1-2 repeticiones en reserva, sube el peso lo mínimo posible.",
+    "Cada 6-8 semanas, una semana con la mitad de series para recuperar."
+   ]
+  },
+  {
+   "id": "M7",
+   "name": "Glúteo y pierna en casa · 3 días",
+   "goal": "hipertrofia",
+   "daysPerWeek": 3,
+   "level": "principiante",
+   "split": "home_full_body_glute",
+   "recommendedForNovice": true,
+   "priorities": [
+    "glúteo",
+    "pierna"
+   ],
+   "knownAs": "Glúteo en casa",
+   "bestFor": "Crecer glúteo y pierna en casa con un par de mancuernas, bandas y un banco o sofá firme.",
+   "weekdayMap": {
+    "default": {
+     "A": 1,
+     "B": 3,
+     "C": 5
+    }
+   },
+   "rationale": "Glúteo en las 3 sesiones con empuje de cadera, zancada o sentadilla y bisagra, más trabajo con banda. Con peso limitado, las repeticiones altas (15-30) cerca del fallo dan una hipertrofia parecida. Hip thrust y sentadilla dieron un crecimiento de glúteo parecido en 9 semanas (Plotkin 2023, MRI); la sentadilla además creció más cuádriceps y aductores. Por eso se combinan: un empuje de cadera, una sentadilla o zancada profunda y una bisagra en cada semana.",
+   "communityNote": "No existe una rutina «de mujer» fisiológicamente distinta: con el mismo entrenamiento, mujeres y hombres ganan músculo en proporción parecida (Roberts 2020; Refalo 2025). Lo que cambia es el objetivo, y esta rutina reparte el volumen según el tuyo. Síntesis de IronLog, no un programa publicado.",
+   "caveats": "Si no tienes banco, apoya la espalda alta en un sofá firme pegado a la pared. Si las mancuernas se quedan livianas, pasa a la versión a una pierna.",
+   "sessions": [
+    {
+     "key": "A",
+     "name": "Casa A",
+     "focus": "Glúteo + espalda",
+     "items": [
+      {
+       "exerciseId": "db_hip_thrust",
+       "sets": 4,
+       "repMin": 10,
+       "repMax": 20,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "goblet_squat",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 20,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_rdl",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "band_lateral_walk",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 25,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "one_arm_db_row",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "pushup",
+       "sets": 2,
+       "repMin": 6,
+       "repMax": 20,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 17,
+     "exerciseCount": 6
+    },
+    {
+     "key": "B",
+     "name": "Casa B",
+     "focus": "Zancada + hombro",
+     "items": [
+      {
+       "exerciseId": "bulgarian_split_squat",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Paso largo y torso algo inclinado: más glúteo.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "single_leg_rdl",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "glute_bridge",
+       "sets": 3,
+       "repMin": 15,
+       "repMax": 30,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Con mancuerna sobre la cadera; aprieta 1 s arriba.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "band_kickback",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 25,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "band_row",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lateral_raise_db",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "band_pull_apart",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 25,
+       "restSec": 45,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 18,
+     "exerciseCount": 7
+    },
+    {
+     "key": "C",
+     "name": "Casa C",
+     "focus": "Glúteo unilateral + torso",
+     "items": [
+      {
+       "exerciseId": "single_leg_glute_bridge",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 20,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "step_up",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_lunge",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": "Zancada hacia atrás.",
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "band_lateral_walk",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 25,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "band_pulldown",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_floor_press",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "dead_bug",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 45,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 17,
+     "exerciseCount": 7
+    }
+   ],
+   "requiresWeekend": false,
+   "sessionMinutesRange": [
+    45,
+    55
+   ],
+   "cardioMinutesPerWeek": 0,
+   "sessionsPerWeek": 3,
+   "category": "mujeres",
+   "place": "home",
+   "emphasis": "gluteo_pierna",
+   "tags": [
+    "casa",
+    "gluteo",
+    "mancuernas",
+    "bandas"
+   ],
+   "source": {
+    "name": "Síntesis IronLog (Plotkin et al. 2023; Roberts et al. 2020; ACSM 2026)",
+    "url": "https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2023.1279170/full",
+    "verification": "sintesis"
+   },
+   "progressionRules": [
+    "Doble progresión: cuando completes el tope del rango en todas las series con 1-2 repeticiones en reserva, sube el peso lo mínimo posible.",
+    "Si no puedes subir peso, alarga el rango (hasta 30 reps cerca del fallo), haz la bajada en 3 s o pasa a la versión a una pierna."
+   ]
+  },
+  {
+   "id": "M8",
+   "name": "Tren superior · 4 días",
+   "goal": "hipertrofia",
+   "daysPerWeek": 4,
+   "level": "principiante-intermedio",
+   "split": "upper_focus",
+   "recommendedForNovice": true,
+   "priorities": [
+    "espalda",
+    "hombros",
+    "brazos"
+   ],
+   "knownAs": "Espalda, hombros y brazos",
+   "bestFor": "Priorizar espalda, hombros y brazos (con la pierna en mantenimiento activo).",
+   "weekdayMap": {
+    "classic": {
+     "T1": 1,
+     "P1": 2,
+     "T2": 4,
+     "P2": 5
+    },
+    "extraTuesday": {
+     "T1": 1,
+     "P1": 2,
+     "T2": 3,
+     "P2": 5
+    },
+    "extraThursday": {
+     "T1": 1,
+     "P1": 3,
+     "T2": 4,
+     "P2": 5
+    }
+   },
+   "rationale": "Dos días de torso con más volumen y dos de cuerpo completo cortos: espalda, deltoides y brazos 4 veces por semana; la pierna conserva ~8-10 series para no perder lo ganado. Las mujeres suelen progresar rápido en fuerza de torso al empezar (Roberts 2020).",
+   "communityNote": "No existe una rutina «de mujer» fisiológicamente distinta: con el mismo entrenamiento, mujeres y hombres ganan músculo en proporción parecida (Roberts 2020; Refalo 2025). Lo que cambia es el objetivo, y esta rutina reparte el volumen según el tuyo. Síntesis de IronLog, no un programa publicado.",
+   "caveats": "La pierna queda en mantenimiento: si también quieres crecerla, usa Todo el cuerpo 4 días.",
+   "sessions": [
+    {
+     "key": "T1",
+     "name": "Torso A",
+     "focus": "Espalda y hombro",
+     "items": [
+      {
+       "exerciseId": "lat_pulldown",
+       "sets": 4,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_cable_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_shoulder_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "lateral_raise_db",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "face_pull",
+       "sets": 3,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "bayesian_cable_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "overhead_cable_ext",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 40,
+     "totalSets": 20,
+     "exerciseCount": 7
+    },
+    {
+     "key": "P1",
+     "name": "Pierna + brazos",
+     "focus": "Pierna y brazos",
+     "items": [
+      {
+       "exerciseId": "leg_press",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "hip_thrust",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "seated_leg_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "pushdown_rope",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_crunch",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 30,
+     "totalSets": 14,
+     "exerciseCount": 6
+    },
+    {
+     "key": "T2",
+     "name": "Torso B",
+     "focus": "Pecho, espalda y brazos",
+     "items": [
+      {
+       "exerciseId": "incline_db_press",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "chest_supported_row",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "neutral_pulldown",
+       "sets": 3,
+       "repMin": 10,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "cable_lateral_raise",
+       "sets": 3,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "reverse_pec_deck",
+       "sets": 2,
+       "repMin": 15,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "hammer_curl",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "pushdown_bar",
+       "sets": 2,
+       "repMin": 10,
+       "repMax": 15,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 35,
+     "totalSets": 18,
+     "exerciseCount": 7
+    },
+    {
+     "key": "P2",
+     "name": "Pierna + hombro",
+     "focus": "Pierna y hombro",
+     "items": [
+      {
+       "exerciseId": "smith_squat",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 120,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "db_rdl",
+       "sets": 3,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "machine_shoulder_press",
+       "sets": 2,
+       "repMin": 8,
+       "repMax": 12,
+       "restSec": 90,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "machine_lateral_raise",
+       "sets": 2,
+       "repMin": 12,
+       "repMax": 20,
+       "restSec": 60,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "reps"
+      },
+      {
+       "exerciseId": "plank",
+       "sets": 2,
+       "repMin": 30,
+       "repMax": 60,
+       "restSec": 45,
+       "rirTarget": 1,
+       "supersetGroup": null,
+       "notes": null,
+       "repUnit": "seconds"
+      }
+     ],
+     "optional": false,
+     "notes": null,
+     "kind": "lifting",
+     "floating": false,
+     "estimatedMinutes": 25,
+     "totalSets": 12,
+     "exerciseCount": 5
+    }
+   ],
+   "requiresWeekend": false,
+   "sessionMinutesRange": [
+    45,
+    60
+   ],
+   "cardioMinutesPerWeek": 0,
+   "sessionsPerWeek": 4,
+   "category": "mujeres",
+   "place": "gym",
+   "emphasis": "torso",
+   "tags": [
+    "torso",
+    "brazos",
+    "hombros"
+   ],
+   "source": {
+    "name": "Síntesis IronLog (Roberts et al. 2020; Refalo et al. 2025; ACSM 2026)",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/32218059/",
+    "verification": "sintesis"
+   },
+   "progressionRules": [
+    "Doble progresión: cuando completes el tope del rango en todas las series con 1-2 repeticiones en reserva, sube el peso lo mínimo posible."
+   ]
   }
  ],
  "addOns": [
@@ -16580,6 +19735,169 @@
   }
  ],
  "recommendationRules": [
+  {
+   "if": {
+    "emphasis": "gluteo_pierna",
+    "daysPerWeek": 3
+   },
+   "recommend": [
+    "M1",
+    "M5"
+   ]
+  },
+  {
+   "if": {
+    "emphasis": "gluteo_pierna",
+    "daysPerWeek": 4
+   },
+   "recommend": [
+    "M2",
+    "M4"
+   ]
+  },
+  {
+   "if": {
+    "emphasis": "gluteo_pierna",
+    "daysPerWeek": 5
+   },
+   "recommend": [
+    "M3",
+    "M2"
+   ]
+  },
+  {
+   "if": {
+    "emphasis": "gluteo_pierna"
+   },
+   "recommend": [
+    "M2",
+    "M1"
+   ]
+  },
+  {
+   "if": {
+    "emphasis": "pierna",
+    "daysPerWeek": 3
+   },
+   "recommend": [
+    "M1",
+    "M5"
+   ]
+  },
+  {
+   "if": {
+    "emphasis": "pierna",
+    "daysPerWeek": 4
+   },
+   "recommend": [
+    "M4",
+    "M2"
+   ]
+  },
+  {
+   "if": {
+    "emphasis": "pierna",
+    "daysPerWeek": 5
+   },
+   "recommend": [
+    "M3",
+    "M4"
+   ]
+  },
+  {
+   "if": {
+    "emphasis": "pierna"
+   },
+   "recommend": [
+    "M4",
+    "M1"
+   ]
+  },
+  {
+   "if": {
+    "emphasis": "gluteo_pierna",
+    "place": "home"
+   },
+   "recommend": [
+    "M7"
+   ],
+   "note": "Entrenas en casa: glúteo y pierna con mancuernas y bandas."
+  },
+  {
+   "if": {
+    "emphasis": "pierna",
+    "place": "home"
+   },
+   "recommend": [
+    "M7"
+   ],
+   "note": "Entrenas en casa: pierna con mancuernas y bandas."
+  },
+  {
+   "if": {
+    "emphasis": "torso"
+   },
+   "recommend": [
+    "M8"
+   ]
+  },
+  {
+   "if": {
+    "sex": "female",
+    "emphasis": "equilibrado",
+    "goal": "hipertrofia",
+    "daysPerWeek": 3
+   },
+   "recommend": [
+    "M5"
+   ]
+  },
+  {
+   "if": {
+    "sex": "female",
+    "emphasis": "equilibrado",
+    "goal": "hipertrofia",
+    "daysPerWeek": 4
+   },
+   "recommend": [
+    "M6"
+   ]
+  },
+  {
+   "if": {
+    "sex": "female",
+    "emphasis": "equilibrado",
+    "goal": "definicion",
+    "daysPerWeek": 3
+   },
+   "recommend": [
+    "M5",
+    "D2"
+   ],
+   "note": "Para perder grasa, la dieta y los pasos diarios hacen la diferencia; la rutina conserva el músculo."
+  },
+  {
+   "if": {
+    "sex": "female",
+    "emphasis": "equilibrado",
+    "goal": "definicion",
+    "daysPerWeek": 4
+   },
+   "recommend": [
+    "M6",
+    "D1"
+   ],
+   "note": "Para perder grasa, la dieta y los pasos diarios hacen la diferencia; la rutina conserva el músculo."
+  },
+  {
+   "if": {
+    "level": "principiante"
+   },
+   "avoid": [
+    "M3"
+   ],
+   "why": "Mucho volumen de pierna para empezar: con 4 días progresas igual y te recuperas mejor."
+  },
   {
    "if": {
     "place": "bodyweight"

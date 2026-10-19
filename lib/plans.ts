@@ -1,7 +1,7 @@
 // Turning a read-only program template into the user's editable plan, and the
 // recommendation engine that suggests templates from the user's profile.
 import type { Level, Plan, PlanSession, Profile } from "@/lib/types";
-import type { Place, ProgramTemplate, RecommendationRule } from "@/lib/seed/schema";
+import type { Emphasis, Place, ProgramTemplate, RecommendationRule } from "@/lib/seed/schema";
 
 export const VARIANT_LABEL: Record<string, string> = {
   default: "Calendario estándar",
@@ -85,6 +85,9 @@ type Who = Pick<Profile, "goal" | "level" | "trainingDays"> & {
   /** Where the user trains; defaults to a full gym. */
   place?: Place | null;
   ageYears?: number | null;
+  sex?: Profile["sex"];
+  /** Body area to prioritise; defaults to balanced. */
+  emphasis?: Emphasis | null;
 };
 
 interface Condition {
@@ -93,11 +96,16 @@ interface Condition {
   level?: string;
   ageMin?: number;
   place?: Place;
+  emphasis?: Emphasis;
+  sex?: "female" | "male";
 }
 
-/** Place and age describe the person more than the goal does, so those rules win ties. */
+/**
+ * Programs for older adults come first; place and the chosen emphasis describe
+ * the person more than the goal does, so those rules win ties.
+ */
 function specificity(c: Condition): number {
-  return (c.place ? 3 : 0) + (c.ageMin ? 3 : 0) + (c.goal ? 1 : 0) + (c.daysPerWeek ? 1 : 0) + (c.level ? 1 : 0);
+  return (c.ageMin ? 7 : 0) + (c.place ? 3 : 0) + (c.emphasis ? 3 : 0) + (c.sex ? 1 : 0) + (c.goal ? 1 : 0) + (c.daysPerWeek ? 1 : 0) + (c.level ? 1 : 0);
 }
 
 /** Can this template be done where the user trains? */
@@ -115,12 +123,15 @@ const PLACE_TEXT: Record<Place, string> = { gym: "un gimnasio", home: "mancuerna
 export function recommendTemplates(templates: ProgramTemplate[], rules: RecommendationRule[], who: Who): Recommendation {
   const days = who.trainingDays.length;
   const place = who.place ?? "gym";
+  const emphasis = who.emphasis ?? "equilibrado";
   const matches = (c: Condition) =>
     (c.goal === undefined || c.goal === who.goal) &&
     (c.daysPerWeek === undefined || c.daysPerWeek === days) &&
     (c.level === undefined || c.level === who.level) &&
     (c.ageMin === undefined || (who.ageYears != null && who.ageYears >= c.ageMin)) &&
-    (c.place === undefined || c.place === place);
+    (c.place === undefined || c.place === place) &&
+    (c.emphasis === undefined || c.emphasis === emphasis) &&
+    (c.sex === undefined || c.sex === who.sex);
 
   const notes = new Map<string, string>();
   const avoid = new Map<string, string>();

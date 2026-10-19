@@ -12,12 +12,19 @@ import { ageFromBirthDate } from "@/lib/analytics/energy";
 import { asPlanLike, validateTemplate } from "@/lib/analytics/validate";
 import { TRACKED_MUSCLES, planVolume } from "@/lib/analytics/volume";
 import { newId, patchProfile, putDoc } from "@/lib/db/write";
-import { CATEGORY_LABEL, GOAL_LABEL, MUSCLE_LABEL, PLACE_LABEL, VERIFICATION_LABEL, WEEKDAY_LONG, fmtNum } from "@/lib/format";
+import { CATEGORY_LABEL, EMPHASIS_LABEL, GOAL_LABEL, MUSCLE_LABEL, PLACE_LABEL, VERIFICATION_LABEL, WEEKDAY_LONG, fmtNum } from "@/lib/format";
 import { VARIANT_LABEL, bestVariant, planFromTemplate, recommendTemplates, templateVariants, type TemplateAdvice } from "@/lib/plans";
-import type { Goal, Place, ProgramTemplate } from "@/lib/types";
+import type { Emphasis, Goal, Place, ProgramTemplate } from "@/lib/types";
 
 type GoalFilter = "all" | Goal;
 type PlaceFilter = "all" | Place;
+/** "mujeres" = the women's category; otherwise a body-area emphasis. */
+type FocusFilter = "all" | "mujeres" | Exclude<Emphasis, "equilibrado">;
+const FOCUS_OPTIONS: { value: FocusFilter; label: string }[] = [
+  { value: "all", label: "Cualquier enfoque" },
+  { value: "mujeres", label: "Para mujeres" },
+  ...(["gluteo_pierna", "pierna", "torso"] as const).map((e) => ({ value: e, label: EMPHASIS_LABEL[e] })),
+];
 
 function Chips<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; label: string }) {
   return (
@@ -44,6 +51,7 @@ export default function RoutinesPage() {
   const [goal, setGoal] = useState<GoalFilter>("all");
   const [days, setDays] = useState<string>("all");
   const [place, setPlace] = useState<PlaceFilter>("all");
+  const [focus, setFocus] = useState<FocusFilter>("all");
   const [using, setUsing] = useState<ProgramTemplate | null>(null);
 
   const rec = useMemo(
@@ -54,11 +62,14 @@ export default function RoutinesPage() {
         trainingDays: p?.trainingDays ?? [],
         place: p?.trainingPlace ?? "gym",
         ageYears: ageFromBirthDate(p?.birthDate ?? null, todayISO()),
+        sex: p?.sex ?? null,
+        emphasis: p?.emphasis ?? null,
       }),
     [data.templates, data.catalog.rules, p],
   );
   const list = data.templates.filter(
-    (t) => (goal === "all" || t.goal === goal) && (days === "all" || t.daysPerWeek === Number(days) || (days === "6" && t.daysPerWeek >= 6)) && (place === "all" || t.place === place),
+    (t) => (goal === "all" || t.goal === goal) && (days === "all" || t.daysPerWeek === Number(days) || (days === "6" && t.daysPerWeek >= 6)) && (place === "all" || t.place === place) &&
+      (focus === "all" || (focus === "mujeres" ? t.category === "mujeres" : t.emphasis === focus)),
   );
   const recommended = rec.ids.map((id) => data.templates.find((t) => t.id === id)).filter((t): t is ProgramTemplate => !!t);
 
@@ -93,6 +104,7 @@ export default function RoutinesPage() {
           <Segmented label="Días por semana" value={days} onChange={setDays} className="sm:flex-1" options={[{ value: "all", label: "Días" }, ...["2", "3", "4", "5", "6"].map((d) => ({ value: d, label: d === "6" ? "6+" : d }))]} />
           <Chips label="Lugar" value={place} onChange={setPlace} options={[{ value: "all", label: "Cualquier lugar" }, ...(Object.keys(PLACE_LABEL) as Place[]).map((x) => ({ value: x, label: PLACE_LABEL[x].split(" (")[0] }))]} />
         </div>
+        <Chips label="Enfoque" value={focus} onChange={setFocus} options={FOCUS_OPTIONS} />
         <p className="px-1 text-xs text-muted">{list.length} rutinas</p>
       </div>
 
@@ -130,6 +142,7 @@ function TemplateCard({ t, advice, onUse, activeTemplateId, highlight }: { t: Pr
         <Badge>{t.level}</Badge>
         {t.category && <Badge>{CATEGORY_LABEL[t.category]}</Badge>}
         {t.place !== "gym" && <Badge tone="violet">{PLACE_LABEL[t.place].split(" (")[0]}</Badge>}
+        {t.emphasis && t.emphasis !== "equilibrado" && <Badge tone="violet">{EMPHASIS_LABEL[t.emphasis]}</Badge>}
         {advice?.recommended && (
           <Badge tone="violet">
             <Star className="size-3" /> Para ti

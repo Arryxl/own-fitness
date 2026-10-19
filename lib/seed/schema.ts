@@ -27,7 +27,9 @@ export const EquipmentSchema = z.enum(EQUIPMENT);
 
 export const GoalSchema = z.enum(["hipertrofia", "fuerza", "definicion", "acondicionamiento", "salud"]);
 export const PlaceSchema = z.enum(["gym", "home", "bodyweight"]);
-export const CATEGORIES = ["fuerza_novato", "fuerza_intermedio", "hipertrofia", "definicion", "acondicionamiento", "salud", "calistenia", "mayores", "poco_tiempo", "casa"] as const;
+/** Body area the person wants to prioritise. */
+export const EmphasisSchema = z.enum(["equilibrado", "pierna", "gluteo_pierna", "torso"]);
+export const CATEGORIES = ["fuerza_novato", "fuerza_intermedio", "hipertrofia", "definicion", "acondicionamiento", "salud", "calistenia", "mayores", "poco_tiempo", "casa", "mujeres"] as const;
 export const CategorySchema = z.enum(CATEGORIES);
 export const SourceSchema = z.object({
   name: z.string(),
@@ -114,6 +116,7 @@ export const ProgramTemplateSchema = z.object({
   weeklyFrequencyDirect: z.record(z.string(), z.number()).optional(),
   category: CategorySchema,
   place: PlaceSchema,
+  emphasis: EmphasisSchema.optional(),
   tags: z.array(z.string()),
   source: SourceSchema,
   deloadRules: z.array(z.string()).optional(),
@@ -141,6 +144,8 @@ const ConditionSchema = z.object({
   level: z.enum(["principiante", "intermedio", "avanzado"]).optional(),
   ageMin: z.number().int().optional(),
   place: PlaceSchema.optional(),
+  emphasis: EmphasisSchema.optional(),
+  sex: z.enum(["female", "male"]).optional(),
 });
 
 export const RecommendationRuleSchema = z.union([
@@ -166,6 +171,7 @@ export type Muscle = z.infer<typeof MuscleSchema>;
 export type Equipment = z.infer<typeof EquipmentSchema>;
 export type Goal = z.infer<typeof GoalSchema>;
 export type Place = z.infer<typeof PlaceSchema>;
+export type Emphasis = z.infer<typeof EmphasisSchema>;
 export type Category = z.infer<typeof CategorySchema>;
 export type RepUnit = z.infer<typeof RepUnitSchema>;
 export type CatalogExercise = z.infer<typeof CatalogExerciseSchema>;

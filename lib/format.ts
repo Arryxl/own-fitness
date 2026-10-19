@@ -1,5 +1,5 @@
 import { parseISODate } from "@/lib/analytics/dates";
-import type { Category, Equipment, Goal, Level, Muscle, Place, SubstitutionReason, Verdict } from "@/lib/types";
+import type { Category, Emphasis, Equipment, Goal, Level, Muscle, Place, SubstitutionReason, Verdict } from "@/lib/types";
 
 const LOCALE = "es-CO";
 
@@ -84,6 +84,21 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   mayores: "Mayores / regreso",
   poco_tiempo: "Poco tiempo",
   casa: "En casa",
+  mujeres: "Para mujeres",
+};
+
+export const EMPHASIS_LABEL: Record<Emphasis, string> = {
+  equilibrado: "Todo el cuerpo",
+  pierna: "Pierna",
+  gluteo_pierna: "Glúteo y pierna",
+  torso: "Tren superior",
+};
+
+export const EMPHASIS_DESCRIPTION: Record<Emphasis, string> = {
+  equilibrado: "Trabajar todo de forma pareja.",
+  pierna: "Crecer pierna completa: cuádriceps, femorales, glúteo y pantorrilla.",
+  gluteo_pierna: "Priorizar glúteo, con pierna completa como base.",
+  torso: "Priorizar espalda, hombros y brazos sin dejar la pierna.",
 };
 
 export const VERIFICATION_LABEL: Record<string, { text: string; tone: "primary" | "violet" | "amber" | "neutral" }> = {

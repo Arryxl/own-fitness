@@ -1,8 +1,8 @@
 // Shared domain types. Global read-only catalog lives in `catalog/*`; each
 // user's data lives under `users/{uid}/**`.
-import type { CatalogExercise, Equipment, Goal, Muscle, Place, RepUnit, TemplateItem } from "@/lib/seed/schema";
+import type { CatalogExercise, Emphasis, Equipment, Goal, Muscle, Place, RepUnit, TemplateItem } from "@/lib/seed/schema";
 
-export type { AddOn, CatalogExercise, Category, Equipment, Goal, Muscle, Place, ProgramTemplate, RepUnit, TemplateItem } from "@/lib/seed/schema";
+export type { AddOn, CatalogExercise, Category, Emphasis, Equipment, Goal, Muscle, Place, ProgramTemplate, RepUnit, TemplateItem } from "@/lib/seed/schema";
 
 export type WeightUnit = "kg" | "lb";
 /** "mixed" = use each exercise's usual gym unit (dumbbells/machines often in lb). */
@@ -225,6 +225,8 @@ export interface Profile {
   unavailableEquipment: Equipment[];
   /** Where the user trains; drives recommendations and equipment defaults. */
   trainingPlace?: Place;
+  /** Body area to prioritise; drives recommendations. Missing = balanced. */
+  emphasis?: Emphasis;
   injuries: string;
   country: string;
   currency: string;

@@ -13,6 +13,7 @@ export async function coachPromptFor(data: UserData): Promise<string> {
     startWeightKg: p?.startWeightKg ?? null,
     goal: p?.goal ?? null,
     level: p?.level ?? null,
+    emphasis: p?.emphasis ?? null,
     trainingDays: p?.trainingDays.length ?? 0,
     injuries: p?.injuries ?? "",
     dietaryRestrictions: p?.dietaryRestrictions ?? [],

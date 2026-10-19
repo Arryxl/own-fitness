@@ -153,6 +153,14 @@ const MAP = {
   easy_run: "Trail_Running_Walking",
   brisk_walk: null,
   rower_steady: "Rowing_Stationary",
+  // Glute work for the routines for women
+  hip_thrust_machine: null,
+  db_hip_thrust: null, // the hip thrust photos there use a barbell
+  single_leg_glute_bridge: "Single_Leg_Glute_Bridge",
+  cable_kickback: "One-Legged_Cable_Kickback",
+  band_kickback: "Glute_Kickback",
+  cable_pull_through: "Pull_Through",
+  cable_hip_abduction: null, // "Cable_Hip_Adduction" there is the opposite movement
 };
 
 const root = path.resolve(import.meta.dirname, "../..");

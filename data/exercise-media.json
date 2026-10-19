@@ -877,6 +877,34 @@
     "/exercises/rowing_stationary-1.jpg"
    ],
    "source": "Rowing_Stationary"
+  },
+  "single_leg_glute_bridge": {
+   "frames": [
+    "/exercises/single_leg_glute_bridge-0.jpg",
+    "/exercises/single_leg_glute_bridge-1.jpg"
+   ],
+   "source": "Single_Leg_Glute_Bridge"
+  },
+  "cable_kickback": {
+   "frames": [
+    "/exercises/one-legged_cable_kickback-0.jpg",
+    "/exercises/one-legged_cable_kickback-1.jpg"
+   ],
+   "source": "One-Legged_Cable_Kickback"
+  },
+  "band_kickback": {
+   "frames": [
+    "/exercises/glute_kickback-0.jpg",
+    "/exercises/glute_kickback-1.jpg"
+   ],
+   "source": "Glute_Kickback"
+  },
+  "cable_pull_through": {
+   "frames": [
+    "/exercises/pull_through-0.jpg",
+    "/exercises/pull_through-1.jpg"
+   ],
+   "source": "Pull_Through"
   }
  }
 }

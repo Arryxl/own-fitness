@@ -11,9 +11,9 @@ import { Field, Input, Select, TextArea, Toggle, parseNum } from "@/components/u
 import { Button } from "@/components/ui";
 import { todayISO } from "@/lib/analytics/dates";
 import { patchProfile } from "@/lib/db/write";
-import { EQUIPMENT_LABEL, GOAL_DESCRIPTION, GOAL_LABEL, LEVEL_LABEL, PLACE_LABEL, WEEKDAY_LONG } from "@/lib/format";
+import { EMPHASIS_DESCRIPTION, EMPHASIS_LABEL, EQUIPMENT_LABEL, GOAL_DESCRIPTION, GOAL_LABEL, LEVEL_LABEL, PLACE_LABEL, WEEKDAY_LONG } from "@/lib/format";
 import { COUNTRIES, DIET_RESTRICTIONS, MIN_AGE, PLACE_EQUIPMENT_OFF, defaultProfile, isAdult } from "@/lib/profile";
-import type { Equipment, Goal, Level, Place, Profile, Sex, UnitsPref } from "@/lib/types";
+import type { Emphasis, Equipment, Goal, Level, Place, Profile, Sex, UnitsPref } from "@/lib/types";
 
 const STEPS = ["Bienvenida", "Sobre ti", "Objetivo", "Dónde entrenas", "Comida", "Coach IA"] as const;
 const AI_TIER = process.env.NEXT_PUBLIC_GEMINI_TIER ?? "free";
@@ -166,6 +166,17 @@ export default function WelcomePage() {
                 <Card key={g} on={d.goal === g} onClick={() => set({ goal: g })} title={GOAL_LABEL[g]} text={GOAL_DESCRIPTION[g]} />
               ))}
             </div>
+            <fieldset>
+              <legend className="text-sm font-semibold">¿Qué quieres priorizar?</legend>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {(Object.keys(EMPHASIS_LABEL) as Emphasis[]).map((e) => (
+                  <Chip key={e} on={(d.emphasis ?? "equilibrado") === e} onClick={() => set({ emphasis: e })}>
+                    {EMPHASIS_LABEL[e]}
+                  </Chip>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-muted">{EMPHASIS_DESCRIPTION[d.emphasis ?? "equilibrado"]} Lo usamos para recomendarte rutinas; puedes cambiarlo cuando quieras.</p>
+            </fieldset>
             <fieldset>
               <legend className="text-sm font-semibold">Nivel</legend>
               <div className="mt-2 grid grid-cols-3 gap-2">

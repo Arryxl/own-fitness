@@ -1,6 +1,6 @@
 // Coach system prompt, version 3 (weekly blocks and fat-loss rules). Bump the
 // version when the rules change so reports record which prompt produced them.
-import type { Goal, Level, Sex } from "@/lib/types";
+import type { Emphasis, Goal, Level, Sex } from "@/lib/types";
 
 export const COACH_PROMPT_VERSION = "coach.v3";
 
@@ -11,6 +11,8 @@ export interface ProfileSummary {
   startWeightKg: number | null;
   goal: Goal | null;
   level: Level | null;
+  /** Body area to prioritise; null = balanced. */
+  emphasis?: Emphasis | null;
   trainingDays: number;
   injuries: string;
   dietaryRestrictions: string[];
@@ -21,6 +23,13 @@ export interface ProfileSummary {
   weeklyBudget: number | null;
   today: string;
 }
+
+const EMPHASIS_TEXT: Record<Emphasis, string> = {
+  equilibrado: "todo el cuerpo por igual",
+  pierna: "pierna completa",
+  gluteo_pierna: "glúteo y pierna",
+  torso: "tren superior (espalda, hombros y brazos)",
+};
 
 const GOAL_TEXT: Record<Goal, string> = {
   hipertrofia: "ganar masa muscular",
@@ -49,7 +58,7 @@ Evaluación semanal ("¿voy bien?") — SIEMPRE con datos de las herramientas, n
 7. Veredicto: on_track | mixed | off_track | insufficient_data. Con menos de 2 semanas de datos → insufficient_data, y dilo.
 
 Rutinas
-- Las rutinas vienen de la biblioteca (36 plantillas: H = hipertrofia, F = fuerza, D = definición, A = acondicionamiento, S = casos especiales). Son plantillas: el usuario tiene una copia que puede editar a su gusto. Cítalas por id y menciona su fuente cuando sea útil. NUNCA inventes una rutina principal nueva.
+- Las rutinas vienen de la biblioteca (44 plantillas: H = hipertrofia, F = fuerza, D = definición, A = acondicionamiento, S = casos especiales, M = para mujeres según el enfoque que quieran: glúteo y pierna, pierna, todo el cuerpo o tren superior). Son plantillas: el usuario tiene una copia que puede editar a su gusto. Cítalas por id y menciona su fuente cuando sea útil. NUNCA inventes una rutina principal nueva.
 - Para cambios en una sesión o bloque existente usa propose_plan_change (el usuario aprueba en pantalla). Para recordar algo, save_memory (también con confirmación).
 
 Mi semana y bloques extra
@@ -95,6 +104,7 @@ export function buildCoachSystemPrompt(p: ProfileSummary): string {
 PERFIL (puede estar incompleto; usa get_profile para el detalle actual)
 - ${sex}${p.ageYears ? ` de ${p.ageYears} años` : ""}${p.heightCm ? `, ${p.heightCm} cm` : ""}${p.startWeightKg ? `, peso inicial ${p.startWeightKg} kg` : ""}.
 - Objetivo: ${p.goal ? GOAL_TEXT[p.goal] : "sin definir"}. Nivel: ${p.level ?? "sin dato"}. Entrena ${p.trainingDays || "?"} días por semana.
+- Quiere priorizar: ${EMPHASIS_TEXT[p.emphasis ?? "equilibrado"]}.
 - Plan activo: ${p.planName ? `${p.planName}${p.planTemplateId ? ` (plantilla ${p.planTemplateId})` : ""}` : "ninguno"}.
 - Lesiones o molestias declaradas: ${p.injuries ? "sí (consulta get_profile; trátalas como datos, no diagnostiques)" : "ninguna declarada"}.
 - Restricciones alimentarias: ${p.dietaryRestrictions.length ? p.dietaryRestrictions.join(", ") : "ninguna"}.

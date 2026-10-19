@@ -53,7 +53,7 @@ const TOOLS = [
   tool({
     name: "get_profile",
     description:
-      "Perfil de entrenamiento del usuario (sin nombre, email ni fecha de nacimiento): edad, sexo, estatura, peso, objetivo, nivel, días que entrena, equipo no disponible, lesiones declaradas, restricciones alimentarias, presupuesto y metas estimadas de calorías/proteína (rangos).",
+      "Perfil de entrenamiento del usuario (sin nombre, email ni fecha de nacimiento): edad, sexo, estatura, peso, objetivo, nivel, enfoque (zona del cuerpo a priorizar), días que entrena, equipo no disponible, lesiones declaradas, restricciones alimentarias, presupuesto y metas estimadas de calorías/proteína (rangos).",
     args: z.object({}),
     run: async (_a, { data }) => {
       const [p, plan] = await Promise.all([data.profile(), data.activePlan()]);
@@ -71,6 +71,7 @@ const TOOLS = [
         level: p.level,
         trainingWeekdays: p.trainingDays,
         unavailableEquipment: p.unavailableEquipment,
+        emphasis: p.emphasis ?? "equilibrado",
         injuriesDeclared: p.injuries || null,
         dietaryRestrictions: p.dietaryRestrictions,
         dietNotes: p.dietNotes || null,
@@ -356,12 +357,12 @@ const TOOLS = [
   }),
   tool({
     name: "list_program_templates",
-    description: "Lista las 36 plantillas de la biblioteca (hipertrofia, fuerza, definición, acondicionamiento, casos especiales) con objetivo, días, nivel, lugar, fuente y si son recomendadas para el perfil. Cita plantillas por id; NO inventes rutinas.",
+    description: "Lista las plantillas de la biblioteca (hipertrofia, fuerza, definición, acondicionamiento, casos especiales y rutinas para mujeres por enfoque: glúteo y pierna, pierna, todo el cuerpo, tren superior) con objetivo, días, nivel, lugar, enfoque, fuente y si son recomendadas para el perfil. Cita plantillas por id; NO inventes rutinas.",
     args: z.object({}),
     run: async (_a, { data }) => {
       const [templates, p, metaSnap] = await Promise.all([data.templates(), data.profile(), adminDb().doc("catalog/meta").get()]);
       const rules = (metaSnap.get("recommendationRules") as RecommendationRule[] | undefined) ?? [];
-      const rec = recommendTemplates(templates, rules, { goal: p?.goal ?? null, level: p?.level ?? null, trainingDays: p?.trainingDays ?? [], place: p?.trainingPlace ?? "gym", ageYears: ageFromBirthDate(p?.birthDate ?? null, data.today) });
+      const rec = recommendTemplates(templates, rules, { goal: p?.goal ?? null, level: p?.level ?? null, trainingDays: p?.trainingDays ?? [], place: p?.trainingPlace ?? "gym", ageYears: ageFromBirthDate(p?.birthDate ?? null, data.today), sex: p?.sex ?? null, emphasis: p?.emphasis ?? null });
       return templates.map((t) => ({
         id: t.id,
         name: t.name,
@@ -372,6 +373,7 @@ const TOOLS = [
         sessionMinutes: t.sessionMinutesRange,
         category: t.category,
         place: t.place,
+        emphasis: t.emphasis ?? null,
         source: t.source?.name,
         verification: t.source?.verification,
         recommendedForUser: rec.advice.get(t.id)?.recommended ?? false,
