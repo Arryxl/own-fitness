@@ -57,6 +57,11 @@ const nextConfig: NextConfig = {
         source: "/__/auth/:path*",
         destination: `https://${firebaseProjectId}.firebaseapp.com/__/auth/:path*`,
       },
+      // The auth handler page also loads the web config from /__/firebase/init.json.
+      {
+        source: "/__/firebase/:path*",
+        destination: `https://${firebaseProjectId}.firebaseapp.com/__/firebase/:path*`,
+      },
     ];
   },
 };

@@ -97,7 +97,7 @@ En producción: **https://ironlog-lime.vercel.app**. El proyecto `ironlog` de Ve
 2. `vercel.json` fija el framework en Next.js; sin él, un proyecto creado desde la CLI se publica como sitio estático y todo da 404.
 3. `package.json` fija `jwks-rsa` 3 con `overrides`. La versión 4 (dependencia de firebase-admin) hace `require()` de `jose` 6, que es solo ESM, y el runtime de Vercel no lo permite: todas las APIs devolvían 500 con `ERR_REQUIRE_ESM`. Para probarlo en local: `NODE_OPTIONS=--no-experimental-require-module npx next start`.
 4. El dominio de Vercel está en Firebase → Authentication → Dominios autorizados.
-5. `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` sigue en `<proyecto>.firebaseapp.com`, que funciona con la ventana emergente de Google. Para el inicio de sesión por redirección en la PWA de iOS conviene cambiarlo al dominio de Vercel; `next.config.ts` ya reenvía `/__/auth/*`. Antes hay que añadir `https://<dominio>/__/auth/handler` a las URI de redirección del cliente OAuth web en Google Cloud.
+5. `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` = `ironlog-lime.vercel.app`: el login de Google ocurre en el propio dominio (necesario en Safari/iPhone, que bloquea el almacenamiento de terceros). `next.config.ts` reenvía `/__/auth/*` y `/__/firebase/*` a Firebase, y el cliente OAuth web de Google Cloud tiene el origen `https://ironlog-lime.vercel.app` y la URI `https://ironlog-lime.vercel.app/__/auth/handler`. Si cambias de dominio, repite esos tres pasos.
 6. Pendiente: personalizar en español las plantillas de correo de Firebase (verificación y contraseña).
 
 ### Límites gratuitos y cuándo pagar
