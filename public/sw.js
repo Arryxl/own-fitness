@@ -4,10 +4,10 @@
  *  - /_next/static (content-hashed): cache-first.
  *  - /api/* and cross-origin requests (Firestore, Google): never cached.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const PAGES = `ironlog-pages-${VERSION}`;
 const STATIC = `ironlog-static-${VERSION}`;
-const ROUTES = ["/", "/entrenar", "/progreso", "/coach", "/mas", "/medidas", "/actividad", "/nutricion", "/ejercicios", "/planes", "/marcas", "/historial", "/ajustes", "/login"];
+const ROUTES = ["/", "/entrenar", "/progreso", "/coach", "/mas", "/rutinas", "/medidas", "/actividad", "/nutricion", "/ejercicios", "/planes", "/marcas", "/historial", "/ajustes", "/login", "/privacidad"];
 const MAX_STATIC = 400;
 
 async function precache() {

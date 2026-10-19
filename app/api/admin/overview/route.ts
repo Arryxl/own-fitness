@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { adminAuth } from "@/lib/firebase/admin";
 import { errorResponse, requireAdmin } from "@/lib/server/auth";
 import { limits } from "@/lib/ai/rate-limit";
@@ -7,6 +8,7 @@ export const maxDuration = 30;
 
 /** Aggregates only: user counts, AI usage and Firestore quota. No user content. */
 export async function GET(req: Request) {
+  await connection(); // per-request: never prerender
   try {
     await requireAdmin(req);
     let total = 0;

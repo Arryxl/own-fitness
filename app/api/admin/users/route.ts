@@ -1,8 +1,10 @@
+import { connection } from "next/server";
 import { adminAuth } from "@/lib/firebase/admin";
 import { errorResponse, requireAdmin } from "@/lib/server/auth";
 
 /** Account metadata only (no training, health or chat data). */
 export async function GET(req: Request) {
+  await connection(); // per-request: never prerender
   try {
     await requireAdmin(req);
     const url = new URL(req.url);
