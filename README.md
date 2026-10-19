@@ -90,10 +90,15 @@ npm run check         # tipos + lint + unitarias + build
 
 Los emuladores necesitan Java: el script usa un JRE portable en `.tools/` (ignorado por git) si existe, o el Java del sistema. Las pruebas E2E usan una IA simulada (`AI_FAKE=1`), que nunca se activa en producción.
 
-## Despliegue (cuando toque)
-1. Importa el repo en Vercel y añade las variables de entorno (sin `NEXT_PUBLIC_USE_EMULATORS` ni `AI_FAKE`).
-2. `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` = tu dominio de Vercel (el `next.config.ts` reenvía `/__/auth/*` a Firebase para Safari/iOS) y añádelo en Firebase → Authentication → Dominios autorizados.
-3. Personaliza las plantillas de correo de Firebase (verificación y contraseña) en español.
+## Despliegue
+En producción: **https://ironlog-lime.vercel.app**. El proyecto `ironlog` de Vercel está conectado al repo y **cada push a `main` despliega solo**.
+
+1. Las variables de entorno se cargan en Vercel → Settings → Environment Variables, sin `NEXT_PUBLIC_USE_EMULATORS` ni `AI_FAKE`. Las secretas se marcan como *sensitive*. `NEXT_PUBLIC_FIREBASE_API_KEY` va como *config*: es pública por diseño.
+2. `vercel.json` fija el framework en Next.js; sin él, un proyecto creado desde la CLI se publica como sitio estático y todo da 404.
+3. `package.json` fija `jwks-rsa` 3 con `overrides`. La versión 4 (dependencia de firebase-admin) hace `require()` de `jose` 6, que es solo ESM, y el runtime de Vercel no lo permite: todas las APIs devolvían 500 con `ERR_REQUIRE_ESM`. Para probarlo en local: `NODE_OPTIONS=--no-experimental-require-module npx next start`.
+4. El dominio de Vercel está en Firebase → Authentication → Dominios autorizados.
+5. `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` sigue en `<proyecto>.firebaseapp.com`, que funciona con la ventana emergente de Google. Para el inicio de sesión por redirección en la PWA de iOS conviene cambiarlo al dominio de Vercel; `next.config.ts` ya reenvía `/__/auth/*`. Antes hay que añadir `https://<dominio>/__/auth/handler` a las URI de redirección del cliente OAuth web en Google Cloud.
+6. Pendiente: personalizar en español las plantillas de correo de Firebase (verificación y contraseña).
 
 ### Límites gratuitos y cuándo pagar
 - **Firestore Spark**: 1 GiB, 50 000 lecturas, 20 000 escrituras y 20 000 borrados al día **para todo el proyecto**. Con persistencia offline y catálogo agregado, un usuario activo hace del orden de cientos de lecturas al día: piensa en **decenas** de usuarios activos diarios, no miles. El panel admin avisa al 70 %. Pasar a **Blaze** (pago por uso) cuando la alerta salte con frecuencia.
