@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { AI_DEADLINE_MS, MODELS, ai, classify, deadlineSignal, withModelFallback } from "@/lib/ai/client";
-import { COACH_PROMPT_VERSION, buildCoachSystemPrompt } from "@/lib/ai/prompts/coach.v1";
+import { AI_FAKE, FAKE_CHAT_REPLY } from "@/lib/ai/fake";
+import { COACH_PROMPT_VERSION } from "@/lib/ai/prompts/coach.v2";
+import { coachPromptFor } from "@/lib/ai/prompts/summary";
+import { recordTokens } from "@/lib/ai/rate-limit";
 import { TOOL_LABELS, runTool, toolDeclarations } from "@/lib/ai/tools";
 import { adminDb } from "@/lib/firebase/admin";
 import { prepareAiRoute, toErrorResponse } from "@/lib/server/aiRoute";
@@ -21,7 +24,7 @@ type Step = { type: string; [k: string]: unknown };
 interface StreamEvent {
   event_type: string;
   index: number;
-  interaction?: { id?: string };
+  interaction?: { id?: string; usage?: { total_tokens?: number } };
   step?: { type: string; id: string; name: string; arguments?: Record<string, unknown> };
   delta?: { type: string; text?: string; arguments?: string };
   error?: { message?: string; code?: number };
@@ -41,19 +44,8 @@ export async function POST(req: Request) {
   const deadline = Date.now() + AI_DEADLINE_MS;
 
   const chatRef = adminDb().doc(`users/${user.uid}/aiChats/${chatId}`);
-  const [historySnap, profile, plan] = await Promise.all([
-    chatRef.collection("messages").orderBy("ts", "desc").limit(HISTORY_MESSAGES).get(),
-    data.profile(),
-    data.activePlan(),
-  ]);
-  const system = buildCoachSystemPrompt({
-    heightCm: profile?.heightCm ?? null,
-    startWeightKg: profile?.startWeightKg ?? null,
-    startDate: profile?.startDate ?? null,
-    planName: plan?.name ?? null,
-    weeklyBudgetCop: profile?.weeklyBudget ?? null,
-    today,
-  });
+  const [historySnap, system] = await Promise.all([chatRef.collection("messages").orderBy("ts", "desc").limit(HISTORY_MESSAGES).get(), coachPromptFor(data)]);
+  void today;
 
   // Our own chat history (Firestore) is replayed as plain text turns; Gemini's
   // stored interactions are only used to chain tool calls within this request.
@@ -71,10 +63,16 @@ export async function POST(req: Request) {
       let text = "";
       const toolsUsed: string[] = [];
       let model = MODELS.primary;
+      let tokens = 0;
       try {
+        if (AI_FAKE) {
+          text = FAKE_CHAT_REPLY;
+          model = "fake";
+          send({ type: "text", text });
+        }
         let input: Step[] = [...history, { type: "user_input", content: [{ type: "text", text: message }] }];
         let previous: string | undefined;
-        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+        for (let round = 0; round < (AI_FAKE ? 0 : MAX_TOOL_ROUNDS); round++) {
           const params = {
             system_instruction: system,
             input,
@@ -121,6 +119,7 @@ export async function POST(req: Request) {
                 break;
               case "interaction.completed":
                 interactionId ??= ev.interaction?.id;
+                tokens += ev.interaction?.usage?.total_tokens ?? 0;
                 break;
               case "error":
                 throw Object.assign(new Error(ev.error?.message ?? "error"), { status: ev.error?.code });
@@ -165,10 +164,12 @@ export async function POST(req: Request) {
         batch.set(chatRef.collection("messages").doc(), { role: "user", text: message, ts: now - 1, toolCalls: [] });
         batch.set(chatRef.collection("messages").doc(), { role: "model", text, ts: now, toolCalls: [...new Set(toolsUsed)], model, prompt: COACH_PROMPT_VERSION });
         await batch.commit();
+        await recordTokens(user.uid, tokens);
         send({ type: "done" });
       } catch (e) {
         const err = classify(e);
-        console.error("chat", e);
+        console.error("chat error:", err.kind);
+        await recordTokens(user.uid, tokens);
         send({ type: "error", message: err.message, partial: text.length > 0 });
         if (text.trim()) {
           // Keep what was already said so nothing is lost.

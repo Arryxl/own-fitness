@@ -2,26 +2,18 @@
 import { exerciseHistory, performanceDroppedTwice } from "@/lib/analytics/strength";
 import { suggestNext, type ProgressionSuggestion } from "@/lib/analytics/progression";
 import { fromKg, round } from "@/lib/analytics/units";
-import type { Exercise, PersonalRecord, Plan, PlanItem, PlanSession, Workout, WorkoutEntry, WorkoutSet } from "@/lib/types";
+import type { AddOn, Exercise, PersonalRecord, Plan, PlanItem, PlanSession, RepUnit, Workout, WorkoutEntry, WorkoutSet } from "@/lib/types";
+
+export const DEFAULT_ITEM: Omit<PlanItem, "exerciseId"> = { sets: 3, repMin: 8, repMax: 12, restSec: 90, rirTarget: 2, supersetGroup: null, notes: null, repUnit: "reps" };
 
 export function suggestionFor(
-  item: Pick<PlanItem, "sets" | "repMin" | "repMax" | "rirTarget">,
+  item: Pick<PlanItem, "sets" | "repMin" | "repMax" | "rirTarget"> & { repUnit?: RepUnit },
   exercise: Exercise,
   workouts: Workout[],
   record: PersonalRecord | undefined,
-  excludeWorkoutId?: string,
 ): ProgressionSuggestion {
-  const history = exerciseHistory(
-    workouts.filter((w) => w.id !== excludeWorkoutId),
-    exercise.id,
-  );
-  return suggestNext({
-    item,
-    exercise,
-    last: history.at(-1) ?? null,
-    record,
-    droppedTwice: performanceDroppedTwice(history),
-  });
+  const history = exerciseHistory(workouts, exercise.id);
+  return suggestNext({ item, exercise, last: history.at(-1) ?? null, record, droppedTwice: performanceDroppedTwice(history), repUnit: item.repUnit });
 }
 
 export function blankSet(idx: number, ex: Exercise, weightKg: number | null): WorkoutSet {
@@ -37,16 +29,34 @@ export function blankSet(idx: number, ex: Exercise, weightKg: number | null): Wo
   };
 }
 
-export function entryFor(item: PlanItem, ex: Exercise, workouts: Workout[], record: PersonalRecord | undefined, plannedExerciseId?: string): WorkoutEntry {
+export function entryFor(item: PlanItem, ex: Exercise, workouts: Workout[], record: PersonalRecord | undefined): WorkoutEntry {
   const s = suggestionFor(item, ex, workouts, record);
   return {
     exerciseId: ex.id,
-    plannedExerciseId: plannedExerciseId ?? ex.id,
+    plannedExerciseId: ex.id,
     substitutionReason: null,
     nameSnapshot: ex.name,
+    repUnit: item.repUnit,
     notes: "",
     sets: Array.from({ length: item.sets }, (_, i) => blankSet(i, ex, s.weightKg)),
   };
+}
+
+/** Plan items of a session plus the add-ons the user enabled (lifting sessions only). */
+export function sessionItems(session: PlanSession, plan: Plan | null, addOns: AddOn[]): PlanItem[] {
+  if (!plan || session.kind !== "lifting") return session.items;
+  const extra = plan.enabledAddOns.flatMap((id) => addOns.find((a) => a.id === id)?.items ?? []);
+  return [...session.items, ...extra.filter((x) => !session.items.some((i) => i.exerciseId === x.exerciseId))];
+}
+
+/** If the planned exercise isn't available, use the first available link of its fallback chain. */
+export function resolveAvailable(ex: Exercise, exercises: Map<string, Exercise>): { exercise: Exercise; substituted: boolean } {
+  if (ex.available) return { exercise: ex, substituted: false };
+  for (const l of ex.fallbackChain) {
+    const alt = exercises.get(l.exerciseId);
+    if (alt?.available) return { exercise: alt, substituted: true };
+  }
+  return { exercise: ex, substituted: false };
 }
 
 export function buildWorkout(args: {
@@ -55,16 +65,19 @@ export function buildWorkout(args: {
   plan: Plan | null;
   session: PlanSession | null;
   exercises: Map<string, Exercise>;
+  addOns: AddOn[];
   workouts: Workout[];
   records: Map<string, PersonalRecord>;
 }): Workout {
-  const { id, date, plan, session, exercises, workouts, records } = args;
+  const { id, date, plan, session, exercises, addOns, workouts, records } = args;
   const now = Date.now();
   const entries: WorkoutEntry[] = [];
-  for (const item of session?.items ?? []) {
-    const ex = exercises.get(item.exerciseId);
-    if (!ex) continue;
-    entries.push(entryFor(item, ex, workouts, records.get(ex.id)));
+  for (const item of session ? sessionItems(session, plan, addOns) : []) {
+    const planned = exercises.get(item.exerciseId);
+    if (!planned) continue;
+    const { exercise, substituted } = resolveAvailable(planned, exercises);
+    const e = entryFor(item, exercise, workouts, records.get(exercise.id));
+    entries.push(substituted ? { ...e, plannedExerciseId: planned.id, substitutionReason: "missing" } : e);
   }
   return {
     id,
@@ -72,6 +85,7 @@ export function buildWorkout(args: {
     planId: plan?.id ?? null,
     sessionKey: session?.key ?? null,
     sessionName: session?.name ?? "Entrenamiento libre",
+    sessionKind: session?.kind ?? "lifting",
     status: "in_progress",
     startedAt: now,
     endedAt: null,
@@ -82,9 +96,9 @@ export function buildWorkout(args: {
   };
 }
 
-export function planItemFor(plan: Plan | null, sessionKey: string | null, exerciseId: string): PlanItem | null {
+export function planItemFor(plan: Plan | null, sessionKey: string | null, exerciseId: string, addOns: AddOn[] = []): PlanItem | null {
   const s = plan?.sessions.find((x) => x.key === sessionKey);
-  return s?.items.find((i) => i.exerciseId === exerciseId) ?? null;
+  return s?.items.find((i) => i.exerciseId === exerciseId) ?? addOns.flatMap((a) => a.items).find((i) => i.exerciseId === exerciseId && plan?.enabledAddOns.length) ?? null;
 }
 
 export function workoutProgress(w: Workout): { done: number; total: number } {
@@ -92,8 +106,8 @@ export function workoutProgress(w: Workout): { done: number; total: number } {
   return { done: all.filter((s) => s.done).length, total: all.length };
 }
 
-/** Rough duration estimate: ~45 s per set + rest. */
 export function estimateMinutes(session: PlanSession): number {
+  if (session.estimatedMinutes) return session.estimatedMinutes;
   const sec = session.items.reduce((t, i) => t + i.sets * (45 + i.restSec), 0);
   return Math.round(sec / 60 / 5) * 5;
 }

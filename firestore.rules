@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// IronLog multi-user rules.
+// - Each user reads/writes only users/{uid}/** (and only with a verified email
+//   or a Google account).
+// - The global catalog is read-only for signed-in users; it is written by the
+//   seed script with Admin credentials (Admin SDK bypasses these rules).
+// - Admins get NO special access to other users' data here: the admin panel
+//   uses server endpoints that only expose account metadata and usage counts.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function verified() {
+      return signedIn()
+        && (request.auth.token.email_verified == true
+            || request.auth.token.firebase.sign_in_provider == 'google.com');
+    }
+
+    function isOwner(uid) {
+      return verified() && request.auth.uid == uid;
+    }
+
+    // Collections only the server writes (quota counters, chat transcripts).
+    function serverOnly(collection) {
+      return collection in ['aiUsage', 'aiChats'];
+    }
+
+    match /catalog/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.size() < 20000;
+      // Account deletion goes through the server (deletes everything at once).
+      allow delete: if false;
+
+      match /{collection}/{docId} {
+        allow read: if isOwner(uid);
+        allow write: if isOwner(uid) && !serverOnly(collection);
+      }
+
+      match /aiChats/{chatId}/messages/{messageId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+    }
+
+    // Global counters and admin bookkeeping: server only.
+    match /system/{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

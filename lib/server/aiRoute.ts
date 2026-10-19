@@ -2,7 +2,7 @@ import "server-only";
 import { AiError } from "@/lib/ai/client";
 import { checkAiQuota } from "@/lib/ai/rate-limit";
 import { addDays, todayISO } from "@/lib/analytics/dates";
-import { HttpError, requireUser, type AuthedUser } from "./auth";
+import { HttpError, clientIp, requireUser, type AuthedUser } from "./auth";
 import { UserData } from "./userData";
 
 export interface AiRouteContext {
@@ -11,6 +11,8 @@ export interface AiRouteContext {
   data: UserData;
   today: string;
 }
+
+export const GEMINI_TIER = process.env.GEMINI_TIER === "paid" ? "paid" : "free";
 
 /**
  * The client's local date (the server runs in UTC). Accepted only if within a
@@ -29,11 +31,15 @@ export function aiStatus(e: AiError): number {
 export function toErrorResponse(e: unknown): Response {
   if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
   if (e instanceof AiError) return Response.json({ error: e.message, kind: e.kind }, { status: aiStatus(e) });
-  console.error(e);
+  console.error("ai route error:", (e as Error)?.name, (e as Error)?.message);
   return Response.json({ error: "Error interno. Tus datos están a salvo; intenta de nuevo." }, { status: 500 });
 }
 
-/** Auth + allowlist + body parsing + AI quota for every AI endpoint. */
+/**
+ * Every AI endpoint: verified token → body → AI consent (required on the free
+ * tier) → per-user/IP/global quotas. Data access is always scoped to the
+ * token's uid, never to a uid sent by the client.
+ */
 export async function prepareAiRoute(req: Request, kind: string): Promise<AiRouteContext> {
   const user = await requireUser(req);
   let body: Record<string, unknown> = {};
@@ -43,7 +49,11 @@ export async function prepareAiRoute(req: Request, kind: string): Promise<AiRout
     throw new HttpError(400, "Cuerpo de la solicitud inválido");
   }
   if (!body || typeof body !== "object" || Array.isArray(body)) throw new HttpError(400, "Cuerpo de la solicitud inválido");
-  await checkAiQuota(user.uid, kind);
   const today = clientToday(body.today);
-  return { user, body, data: new UserData(user.uid, today), today };
+  const data = new UserData(user.uid, today);
+  const profile = await data.profile();
+  if (!profile?.onboardingCompletedAt) throw new HttpError(403, "Completa tu perfil antes de usar el coach.");
+  if (GEMINI_TIER === "free" && !profile.aiConsent?.accepted) throw new HttpError(403, "Para usar el coach debes aceptar el consentimiento de IA en Ajustes.");
+  await checkAiQuota(user.uid, kind, clientIp(req));
+  return { user, body, data, today };
 }

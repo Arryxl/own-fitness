@@ -24,8 +24,8 @@ export default function HistoryPage() {
   const [deleting, setDeleting] = useState<Workout | null>(null);
 
   const weeks = useMemo(
-    () => weeklyAttendance({ plan: data.activePlan, workouts: data.workouts, weekStarts: lastWeekStarts(today, 12), floatingByWeek: data.weekPlans, today, startDate: data.profile?.startDate }),
-    [data.activePlan, data.workouts, data.weekPlans, today, data.profile?.startDate],
+    () => weeklyAttendance({ plan: data.activePlan, workouts: data.workouts, weekStarts: lastWeekStarts(today, 12), today, startDate: data.profile?.startDate }),
+    [data.activePlan, data.workouts, today, data.profile?.startDate],
   );
   const summary = summarizeAttendance(weeks);
   const done = [...data.workouts].filter((w) => w.status === "completed").reverse();

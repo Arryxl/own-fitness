@@ -1,51 +1,38 @@
-// Shared domain types. Firestore layout: everything lives under users/{uid}.
+// Shared domain types. Global read-only catalog lives in `catalog/*`; each
+// user's data lives under `users/{uid}/**`.
+import type { CatalogExercise, Equipment, Goal, Muscle, RepUnit, TemplateItem } from "@/lib/seed/schema";
+
+export type { AddOn, CatalogExercise, Equipment, Goal, Muscle, ProgramTemplate, RepUnit, TemplateItem } from "@/lib/seed/schema";
 
 export type WeightUnit = "kg" | "lb";
+/** "mixed" = use each exercise's usual gym unit (dumbbells/machines often in lb). */
+export type UnitsPref = "kg" | "lb" | "mixed";
+export type Level = "principiante" | "intermedio" | "avanzado";
+export type Sex = "male" | "female" | "other";
 
-export type Muscle =
-  | "chest"
-  | "back"
-  | "shoulders"
-  | "rear_delts"
-  | "triceps"
-  | "biceps"
-  | "quads"
-  | "hamstrings"
-  | "glutes"
-  | "abs"
-  | "traps"
-  | "calves";
-
-export type Equipment =
-  | "machine"
-  | "dumbbell"
-  | "barbell"
-  | "ez_bar"
-  | "smith"
-  | "cable"
-  | "bodyweight"
-  | "bench"
-  | "band"
-  | "pullup_assist"
-  | "dip_station"
-  | "captains_chair";
-
-/** reps = count repetitions; seconds = timed holds (plank). */
-export type SetMetric = "reps" | "seconds";
-
-export type SubstitutionReason =
-  | "busy"
-  | "missing"
-  | "pain"
-  | "no_spotter"
-  | "fatigue"
-  | "other";
+export type SubstitutionReason = "busy" | "missing" | "pain" | "no_spotter" | "fatigue" | "other";
 
 export interface FallbackLink {
   exerciseId: string;
   when: string;
 }
 
+/** users/{uid}/exerciseOverrides/{exerciseId}: only the fields the user changed (or a full custom exercise). */
+export interface ExerciseOverride {
+  id: string;
+  userModified: true;
+  available?: boolean;
+  displayUnit?: WeightUnit;
+  fallbackChain?: FallbackLink[];
+  name?: string;
+  cues?: string;
+  increment?: number | null;
+  /** Custom exercises created by the user carry the full definition. */
+  custom?: Omit<CatalogExercise, "id" | "source" | "available">;
+  updatedAt: number;
+}
+
+/** Effective exercise = catalog entry merged with the user's override and equipment profile. */
 export interface Exercise {
   id: string;
   name: string;
@@ -55,15 +42,15 @@ export interface Exercise {
   equipment: Equipment[];
   spotterFree: boolean;
   isCompound: boolean;
-  metric: SetMetric;
-  cues: string;
-  displayUnit: WeightUnit;
   weightIsPerHand: boolean;
-  available: boolean;
+  displayUnit: WeightUnit;
+  metric: RepUnit;
+  cues: string;
   fallbackChain: FallbackLink[];
-  /** Smallest realistic load jump, in displayUnit. Optional override. */
-  increment?: number;
-  custom?: boolean;
+  available: boolean;
+  increment?: number | null;
+  custom: boolean;
+  overridden: boolean;
 }
 
 export interface PersonalRecord {
@@ -77,35 +64,42 @@ export interface PersonalRecord {
   note: string;
 }
 
-export type SessionKind = "gym" | "floating" | "home";
-
-export interface PlanItem {
-  exerciseId: string;
-  sets: number;
-  repMin: number;
-  repMax: number;
-  restSec: number;
-  rirTarget: number;
-  notes: string;
-}
+export type PlanItem = TemplateItem;
 
 export interface PlanSession {
   key: string;
   name: string;
-  /** ISO weekday 1 = Monday … 7 = Sunday. null for floating/home sessions. */
-  weekday: number | null;
-  kind: SessionKind;
   focus: string;
+  kind: "lifting" | "cardio";
+  /** ISO weekday 1 = Monday … 7 = Sunday; null for optional/floating or rotating sessions. */
+  weekday: number | null;
+  optional: boolean;
+  floating: boolean;
+  notes: string | null;
+  estimatedMinutes: number;
   items: PlanItem[];
 }
 
+/** users/{uid}/plans/{id}: an editable copy of a template. */
 export interface Plan {
   id: string;
   name: string;
-  daysPerWeek: 3 | 4;
+  sourceTemplateId: string | null;
+  goal: Goal;
+  daysPerWeek: number;
+  level: string;
+  weekdayVariant: string | null;
+  rotation: "alternate" | null;
+  /** For rotating plans: training weekdays and the date the rotation starts counting from. */
+  scheduleDays: number[];
+  startDate: string;
   sessions: PlanSession[];
-  /** Weekdays a floating session may land on (2 = Tue, 4 = Thu). */
-  floatingWeekdays?: number[];
+  enabledAddOns: string[];
+  recommendedAddOns: string[];
+  progressionRules: string[];
+  dailyStepsTarget: [number, number] | null;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface WorkoutSet {
@@ -124,6 +118,7 @@ export interface WorkoutEntry {
   plannedExerciseId?: string | null;
   substitutionReason?: SubstitutionReason | null;
   nameSnapshot: string;
+  repUnit?: RepUnit;
   notes: string;
   sets: WorkoutSet[];
 }
@@ -136,6 +131,7 @@ export interface Workout {
   planId: string | null;
   sessionKey: string | null;
   sessionName: string;
+  sessionKind?: "lifting" | "cardio";
   status: WorkoutStatus;
   startedAt: number;
   endedAt: number | null;
@@ -182,6 +178,7 @@ export interface Meal {
   source: "manual" | "ai";
 }
 
+/** Catalog food merged with the user's prices; users/{uid}/foods holds overrides and custom foods. */
 export interface Food {
   id: string;
   name: string;
@@ -189,36 +186,51 @@ export interface Food {
   portionGrams?: number | null;
   proteinG?: number | null;
   kcal?: number | null;
-  /** Price in COP that the user paid for `priceQty` portions. */
+  tags?: string[];
   priceCop?: number | null;
   priceQty?: number | null;
   priceNote?: string;
   notes?: string;
+  custom?: boolean;
+  hidden?: boolean;
+}
+
+export interface AiConsent {
+  accepted: boolean;
+  at: number | null;
 }
 
 export interface Profile {
+  schemaVersion: 2;
+  displayName: string | null;
+  birthDate: string | null;
+  sex: Sex | null;
   heightCm: number | null;
-  goal: string;
-  units: "kg";
-  timezone: string;
+  startWeightKg: number | null;
+  goal: Goal | null;
+  trainingDays: number[];
+  level: Level | null;
+  unavailableEquipment: Equipment[];
+  injuries: string;
+  country: string;
+  currency: string;
   weeklyBudget: number | null;
-  currency: "COP";
-  country: "CO";
+  dietaryRestrictions: string[];
+  dietNotes: string;
+  units: UnitsPref;
+  healthAcceptedAt: number | null;
+  privacyAcceptedAt: number | null;
+  aiConsent: AiConsent;
+  onboardingStep: number;
+  onboardingCompletedAt: number | null;
   activePlanId: string | null;
   proteinTargetG: number | null;
   stepsTarget: number;
   stepsBaseline: number | null;
   startDate: string | null;
-  startWeightKg: number | null;
   restTimerDefaultSec: number;
-  seededVersion: number;
+  timezone: string;
   createdAt: number;
-}
-
-export interface WeekPlan {
-  /** ISO week key, e.g. 2026-W42. */
-  id: string;
-  floatingWeekday: number | null;
 }
 
 export interface WeeklyStats {

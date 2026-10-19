@@ -48,8 +48,8 @@ function Summary() {
   const data = useData();
   const { today } = useToday();
   const weeks = useMemo(
-    () => weeklyAttendance({ plan: data.activePlan, workouts: data.workouts, weekStarts: lastWeekStarts(today, 8), floatingByWeek: data.weekPlans, today, startDate: data.profile?.startDate }),
-    [data.activePlan, data.workouts, data.weekPlans, today, data.profile?.startDate],
+    () => weeklyAttendance({ plan: data.activePlan, workouts: data.workouts, weekStarts: lastWeekStarts(today, 8), today, startDate: data.profile?.startDate }),
+    [data.activePlan, data.workouts, today, data.profile?.startDate],
   );
   const att = summarizeAttendance(weeks);
   const current = weeks.at(-1)!;
@@ -277,7 +277,7 @@ function Volume() {
     () =>
       lastWeekStarts(today, 8).map((start) => {
         const s = setsByMuscle(data.workouts.filter((w) => w.date >= start && w.date <= addDays(start, 6)), data.exerciseMap);
-        return { date: start, chest: s.chest ?? 0, back: s.back ?? 0, shoulders: s.shoulders ?? 0, triceps: s.triceps ?? 0 };
+        return { date: start, chest: s.chest ?? 0, back: s.back ?? 0, side_delts: s.side_delts ?? 0, triceps: s.triceps ?? 0 };
       }),
     [data.workouts, data.exerciseMap, today],
   );
@@ -291,14 +291,14 @@ function Volume() {
         <VolumeBars sets={sets} />
       </Card>
       <Card>
-        <CardHeader title="Prioridades (8 semanas)" subtitle="Pecho, espalda, hombros y tríceps" />
+        <CardHeader title="Prioridades (8 semanas)" subtitle="Pecho, espalda, hombro lateral y tríceps" />
         <LinesChart
           unit="series"
           data={history}
           lines={[
             { key: "chest", label: "Pecho", color: "var(--primary)" },
             { key: "back", label: "Espalda", color: "var(--violet)" },
-            { key: "shoulders", label: "Hombros", color: "var(--accent)" },
+            { key: "side_delts", label: "Hombro lateral", color: "var(--accent)" },
             { key: "triceps", label: "Tríceps", color: "var(--amber)" },
           ]}
         />

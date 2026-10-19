@@ -1,9 +1,9 @@
 // Double progression (section 8.1 of the spec). Heuristic, not a prescription.
-import type { Exercise, PersonalRecord, PlanItem, WeightUnit } from "@/lib/types";
+import type { Exercise, PersonalRecord, PlanItem, RepUnit, WeightUnit } from "@/lib/types";
 import type { ExerciseSession } from "./strength";
 import { formatWeight, fromKg, round, toKg } from "./units";
 
-export type SuggestionKind = "calibrate" | "from_record" | "increase" | "add_reps" | "progress_variation";
+export type SuggestionKind = "calibrate" | "from_record" | "increase" | "add_reps" | "progress_variation" | "cardio";
 
 export interface ProgressionSuggestion {
   kind: SuggestionKind;
@@ -32,10 +32,21 @@ export function suggestNext(args: {
   last: ExerciseSession | null;
   record?: PersonalRecord | null;
   droppedTwice?: boolean;
+  /** The plan item's unit wins over the exercise default (a plank may be timed in one plan, reps in another). */
+  repUnit?: RepUnit;
 }): ProgressionSuggestion {
   const { item, exercise, last, record, droppedTwice } = args;
+  const metric = args.repUnit ?? exercise.metric;
   const unit = exercise.displayUnit;
-  const what = exercise.metric === "seconds" ? "s" : "reps";
+  const what = metric === "seconds" ? "s" : "reps";
+  if (metric === "minutes") {
+    return {
+      kind: "cardio",
+      weightKg: null,
+      targetReps: item.repMin,
+      message: `${item.repMin}-${item.repMax} min a ritmo conversacional (puedes hablar sin ahogarte). Anota los minutos que hiciste.`,
+    };
+  }
   const warning = droppedTwice
     ? "El rendimiento bajó 2 sesiones seguidas: revisa sueño, comida y fatiga antes de culpar al plan."
     : undefined;
@@ -72,7 +83,7 @@ export function suggestNext(args: {
         weightKg: null,
         targetReps: item.repMin,
         message:
-          exercise.metric === "seconds"
+          metric === "seconds"
             ? `Llegaste al tope (${item.repMax} s) en todas las series: usa una variante más difícil o añade carga.`
             : `Llegaste al tope en todas las series: usa una variante más difícil o añade lastre y vuelve a ${item.repMin} reps.`,
         warning,
@@ -92,9 +103,9 @@ export function suggestNext(args: {
 
   const atTop = loaded ? sets.filter((s) => s.weightKg === top) : sets;
   const minReps = Math.min(...atTop.map((s) => s.reps ?? 0));
-  const step = exercise.metric === "seconds" ? 5 : 1;
+  const step = metric === "seconds" ? 5 : 1;
   const target = Math.min(item.repMax, Math.max(item.repMin, minReps + step));
-  const plus = exercise.metric === "seconds" ? "+5 s" : "+1 repetición";
+  const plus = metric === "seconds" ? "+5 s" : "+1 repetición";
   return {
     kind: "add_reps",
     weightKg: loaded ? top : null,

@@ -23,6 +23,7 @@ export async function POST(req: Request) {
       .filter((f) => f.proteinG != null)
       .map((f) => ({ name: f.name, portion: f.portionLabel, proteinG: f.proteinG }));
     const { data, model } = await generateStructured({
+      uid: ctx.user.uid,
       system: SYSTEM,
       input: `Catálogo del usuario (proteína por porción): ${JSON.stringify(foods)}\n\nComida a estimar: """${parsed.data.text}"""`,
       schema: MealEstimateSchema,

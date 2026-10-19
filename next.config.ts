@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  env: {
+    // The client only needs to know the tier to decide whether AI consent is required.
+    NEXT_PUBLIC_GEMINI_TIER: process.env.GEMINI_TIER === "paid" ? "paid" : "free",
+  },
   experimental: {
     // Screens render client-side behind the auth gate; validate only segments that opt in.
     instantInsights: { validationLevel: "manual-warning" },

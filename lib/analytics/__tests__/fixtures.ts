@@ -14,7 +14,7 @@ export function workout(date: string, entries: WorkoutEntry[], extra: Partial<Wo
   return {
     id: `w${n}`,
     date,
-    planId: "plan_3d",
+    planId: "p",
     sessionKey: "mon",
     sessionName: "Torso A",
     status: "completed",

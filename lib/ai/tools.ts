@@ -4,6 +4,9 @@ import { addDays, lastWeekStarts, weekStart } from "@/lib/analytics/dates";
 import { summarizeAttendance, weeklyAttendance } from "@/lib/analytics/attendance";
 import { dailyMeans, measurementChange, movingAverage7d, weightTrend } from "@/lib/analytics/bodyweight";
 import { nutritionSummary, proteinRange, proteinTarget } from "@/lib/analytics/nutrition";
+import { ageFromBirthDate, energyTargets } from "@/lib/analytics/energy";
+import { recommendTemplates } from "@/lib/plans";
+import type { RecommendationRule } from "@/lib/seed/schema";
 import { exerciseHistory, exerciseTrend, performanceDroppedTwice, workingSets } from "@/lib/analytics/strength";
 import { round } from "@/lib/analytics/units";
 import { PRIORITY_MUSCLES, VOLUME_TARGET, planVolume, setsByMuscle, volumeStatus } from "@/lib/analytics/volume";
@@ -44,21 +47,35 @@ async function findExercise(ctx: ToolContext, q: string) {
 const TOOLS = [
   tool({
     name: "get_profile",
-    description: "Perfil del usuario: estatura, peso inicial, objetivo, días de entrenamiento, presupuesto semanal (COP), meta de proteína y pasos. Sin datos personales identificables.",
+    description:
+      "Perfil de entrenamiento del usuario (sin nombre, email ni fecha de nacimiento): edad, sexo, estatura, peso, objetivo, nivel, días que entrena, equipo no disponible, lesiones declaradas, restricciones alimentarias, presupuesto y metas estimadas de calorías/proteína (rangos).",
     args: z.object({}),
     run: async (_a, { data }) => {
       const [p, plan] = await Promise.all([data.profile(), data.activePlan()]);
       if (!p) return { error: "Sin perfil" };
       const ma = movingAverage7d(dailyMeans(await data.bodyMetrics(), "weightKg")).at(-1)?.value ?? p.startWeightKg;
+      const age = ageFromBirthDate(p.birthDate, data.today);
       return {
+        ageYears: age,
+        sex: p.sex,
         heightCm: p.heightCm,
         startDate: p.startDate,
         startWeightKg: p.startWeightKg,
+        currentWeight7dKg: ma ?? null,
         goal: p.goal,
-        activePlan: plan?.name ?? null,
-        weeklyBudgetCop: p.weeklyBudget,
+        level: p.level,
+        trainingWeekdays: p.trainingDays,
+        unavailableEquipment: p.unavailableEquipment,
+        injuriesDeclared: p.injuries || null,
+        dietaryRestrictions: p.dietaryRestrictions,
+        dietNotes: p.dietNotes || null,
+        country: p.country,
+        currency: p.currency,
+        weeklyFoodBudget: p.weeklyBudget,
+        activePlan: plan ? { name: plan.name, templateId: plan.sourceTemplateId } : null,
         proteinTargetG: proteinTarget(p.proteinTargetG, ma),
         proteinRangeG: proteinRange(ma),
+        energyEstimate: energyTargets({ sex: p.sex, ageYears: age, heightCm: p.heightCm, weightKg: ma ?? null, trainingDaysPerWeek: p.trainingDays.length, goal: p.goal }),
         stepsTarget: p.stepsTarget,
         today: data.today,
       };
@@ -69,8 +86,8 @@ const TOOLS = [
     description: "Sesiones de gimnasio planeadas vs realizadas por semana (lunes a domingo), racha y % de cumplimiento.",
     args: z.object({ weeks: weeksArg(26, 4) }),
     run: async ({ weeks }, { data }) => {
-      const [plan, workouts, weekPlans, profile] = await Promise.all([data.activePlan(), data.workouts(), data.weekPlans(), data.profile()]);
-      const list = weeklyAttendance({ plan, workouts, weekStarts: lastWeekStarts(data.today, weeks), floatingByWeek: weekPlans, today: data.today, startDate: profile?.startDate });
+      const [plan, workouts, profile] = await Promise.all([data.activePlan(), data.workouts(), data.profile()]);
+      const list = weeklyAttendance({ plan, workouts, weekStarts: lastWeekStarts(data.today, weeks), today: data.today, startDate: profile?.startDate });
       return {
         weeks: list.map((w) => ({ weekStart: w.weekStart, planned: w.planned, attended: w.attended, closed: w.closed, attendedDates: w.attendedDates })),
         summary: summarizeAttendance(list),
@@ -221,13 +238,64 @@ const TOOLS = [
       return {
         id: plan.id,
         name: plan.name,
+        sourceTemplateId: plan.sourceTemplateId,
+        rotation: plan.rotation,
+        enabledAddOns: plan.enabledAddOns,
+        progressionRules: plan.progressionRules,
         sessions: plan.sessions.map((s) => ({
           key: s.key,
           name: s.name,
           weekday: s.weekday,
           kind: s.kind,
-          items: s.items.map((i) => ({ exerciseId: i.exerciseId, name: map.get(i.exerciseId)?.name, sets: i.sets, reps: `${i.repMin}-${i.repMax}`, rir: i.rirTarget })),
+          optional: s.optional || s.floating,
+          items: s.items.map((i) => ({ exerciseId: i.exerciseId, name: map.get(i.exerciseId)?.name, available: map.get(i.exerciseId)?.available, sets: i.sets, range: `${i.repMin}-${i.repMax} ${i.repUnit}`, rir: i.rirTarget })),
         })),
+      };
+    },
+  }),
+  tool({
+    name: "list_program_templates",
+    description: "Lista las plantillas de rutina de la biblioteca (H1-H6, F1-F2, D1-D2) con objetivo, días, nivel y si son recomendadas para el perfil. Cita plantillas por id; NO inventes rutinas.",
+    args: z.object({}),
+    run: async (_a, { data }) => {
+      const [templates, p, metaSnap] = await Promise.all([data.templates(), data.profile(), adminDb().doc("catalog/meta").get()]);
+      const rules = (metaSnap.get("recommendationRules") as RecommendationRule[] | undefined) ?? [];
+      const rec = recommendTemplates(templates, rules, { goal: p?.goal ?? null, level: p?.level ?? null, trainingDays: p?.trainingDays ?? [] });
+      return templates.map((t) => ({
+        id: t.id,
+        name: t.name,
+        goal: t.goal,
+        daysPerWeek: t.daysPerWeek,
+        level: t.level,
+        requiresWeekend: t.requiresWeekend,
+        sessionMinutes: t.sessionMinutesRange,
+        recommendedForUser: rec.advice.get(t.id)?.recommended ?? false,
+        warnings: rec.advice.get(t.id)?.warnings ?? [],
+      }));
+    },
+  }),
+  tool({
+    name: "get_program_template",
+    description: "Detalle de una plantilla por id: sesiones, ejercicios, volumen semanal, fundamento, advertencias y reglas de progresión.",
+    args: z.object({ id: z.string().min(1).max(10) }),
+    run: async ({ id }, { data }) => {
+      const t = (await data.templates()).find((x) => x.id === id);
+      if (!t) return { error: "No existe la plantilla " + id };
+      const map = await data.exerciseMap();
+      return { ...t, sessions: t.sessions.map((s) => ({ ...s, items: s.items.map((i) => ({ ...i, name: map.get(i.exerciseId)?.name })) })) };
+    },
+  }),
+  tool({
+    name: "get_exercise_alternatives",
+    description: "Cadena ordenada de alternativas de un ejercicio (con la condición de cada eslabón) y si cada una está disponible en el gimnasio del usuario.",
+    args: z.object({ exerciseId: z.string().min(1).max(80) }),
+    run: async ({ exerciseId }, ctx) => {
+      const ex = await findExercise(ctx, exerciseId);
+      if (!ex) return { error: "Ejercicio no encontrado" };
+      const map = await ctx.data.exerciseMap();
+      return {
+        exercise: { id: ex.id, name: ex.name, available: ex.available, spotterFree: ex.spotterFree },
+        chain: ex.fallbackChain.map((l) => ({ id: l.exerciseId, name: map.get(l.exerciseId)?.name, when: l.when, available: map.get(l.exerciseId)?.available, spotterFree: map.get(l.exerciseId)?.spotterFree })),
       };
     },
   }),
@@ -287,6 +355,9 @@ export const TOOL_LABELS: Record<string, string> = {
   get_recent_workouts: "Leyendo sesiones recientes",
   get_nutrition_summary: "Revisando proteína",
   get_active_plan: "Leyendo tu plan",
+  list_program_templates: "Revisando la biblioteca de rutinas",
+  get_program_template: "Leyendo una plantilla",
+  get_exercise_alternatives: "Buscando alternativas",
   search_memory: "Buscando en tus notas",
   propose_plan_change: "Preparando una propuesta",
   save_memory: "Sugiriendo una nota",

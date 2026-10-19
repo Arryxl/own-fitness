@@ -4,7 +4,6 @@ import clsx from "clsx";
 import {
   Apple,
   ArrowRight,
-  CalendarPlus,
   Check,
   Dumbbell,
   Footprints,
@@ -18,35 +17,33 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { useData } from "@/components/providers/DataProvider";
 import { Badge, Button, Card, CardHeader, IconTile, LinkButton, ProgressBar, Ring } from "@/components/ui";
-import { addDays, isoWeekday, weekStart } from "@/lib/analytics/dates";
-import { isFloatingCandidate, plannedSessionsForWeek, sessionForDate, summarizeAttendance, weeklyAttendance } from "@/lib/analytics/attendance";
+import { addDays, weekStart } from "@/lib/analytics/dates";
+import { plannedSessionsForWeek, sessionForDate, summarizeAttendance, weeklyAttendance } from "@/lib/analytics/attendance";
 import { dailyMeans, movingAverage7d } from "@/lib/analytics/bodyweight";
 import { proteinByDay, proteinTarget } from "@/lib/analytics/nutrition";
 import { workingSets } from "@/lib/analytics/strength";
 import { lastWeekStarts } from "@/lib/analytics/dates";
 import { putDoc, newId } from "@/lib/db/write";
-import { VERDICT_LABEL, WEEKDAY_LONG, WEEKDAY_SHORT, fmtDate, fmtNum } from "@/lib/format";
+import { VERDICT_LABEL, WEEKDAY_SHORT, fmtDate, fmtNum } from "@/lib/format";
 import { useToday } from "@/lib/hooks/useToday";
 import { buildWorkout, estimateMinutes, workoutProgress } from "@/lib/workout";
 
 export default function TodayPage() {
   const data = useData();
   const router = useRouter();
-  const { today, weekKey } = useToday();
-  const { activePlan: plan, workouts, weekPlans, profile } = data;
+  const { today } = useToday();
+  const { activePlan: plan, workouts, profile } = data;
 
-  const floating = weekPlans.get(weekKey) ?? null;
-  const session = sessionForDate(plan, today, floating);
+  const session = sessionForDate(plan, today);
   const active = workouts.find((w) => w.status === "in_progress");
   const doneToday = workouts.find((w) => w.status === "completed" && w.date === today);
-  const canFloat = plan?.sessions.some((s) => s.kind === "floating");
-  const homeSession = plan?.sessions.find((s) => s.kind === "home") ?? null;
+  const extraSessions = plan?.sessions.filter((s) => s.optional || s.floating) ?? [];
 
   const week = useMemo(() => {
     const ws = weekStart(today);
-    const att = weeklyAttendance({ plan, workouts, weekStarts: lastWeekStarts(today, 8), floatingByWeek: weekPlans, today, startDate: profile?.startDate });
+    const att = weeklyAttendance({ plan, workouts, weekStarts: lastWeekStarts(today, 8), today, startDate: profile?.startDate });
     const current = att[att.length - 1];
-    const planned = plannedSessionsForWeek(plan, ws, weekPlans.get(weekKey) ?? null);
+    const planned = plannedSessionsForWeek(plan, ws);
     const days = Array.from({ length: 7 }, (_, i) => {
       const date = addDays(ws, i);
       const sets = workouts
@@ -55,7 +52,7 @@ export default function TodayPage() {
       return { date, sets, planned: planned.some((p) => p.date === date) };
     });
     return { current, summary: summarizeAttendance(att), days };
-  }, [plan, workouts, weekPlans, today, weekKey, profile?.startDate]);
+  }, [plan, workouts, today, profile?.startDate]);
 
   const weight = useMemo(() => {
     const ma = movingAverage7d(dailyMeans(data.bodyMetrics, "weightKg"));
@@ -72,13 +69,9 @@ export default function TodayPage() {
   function start(s = session) {
     if (active) return router.push("/entrenar");
     const id = newId(data.uid, "workouts");
-    const w = buildWorkout({ id, date: today, plan, session: s, exercises: data.exerciseMap, workouts, records: data.records });
+    const w = buildWorkout({ id, date: today, plan, session: s, exercises: data.exerciseMap, addOns: data.addOns, workouts, records: data.records });
     putDoc(data.uid, "workouts", id, w);
     router.push("/entrenar");
-  }
-
-  function setFloating(day: number | null) {
-    putDoc(data.uid, "weekPlans", weekKey, { id: weekKey, floatingWeekday: day });
   }
 
   const hour = new Date().getHours();
@@ -88,7 +81,10 @@ export default function TodayPage() {
     <div className="animate-rise space-y-4">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{greeting} 👋</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+            {greeting}
+            {profile?.displayName ? `, ${profile.displayName}` : ""} 👋
+          </h1>
           <p className="mt-1 text-sm text-muted first-letter:uppercase">{fmtDate(today)}</p>
         </div>
         <Link href="/coach" className="glass flex size-12 items-center justify-center rounded-2xl" aria-label="Abrir coach">
@@ -125,7 +121,7 @@ export default function TodayPage() {
             <div>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <Badge tone={session.kind === "floating" ? "violet" : "primary"}>{session.kind === "floating" ? "Día flotante" : "Hoy toca"}</Badge>
+                  <Badge tone={session.kind === "cardio" ? "violet" : "primary"}>{session.kind === "cardio" ? "Cardio suave" : "Hoy toca"}</Badge>
                   <h2 className="mt-2 text-xl font-extrabold">{session.name}</h2>
                   <p className="text-sm text-muted">{session.focus}</p>
                 </div>
@@ -145,17 +141,26 @@ export default function TodayPage() {
                 <Dumbbell className="size-5" /> Iniciar entrenamiento
               </Button>
             </div>
+          ) : !plan ? (
+            <div>
+              <Badge tone="violet">Primer paso</Badge>
+              <h2 className="mt-2 text-xl font-extrabold">Elige tu rutina</h2>
+              <p className="text-sm text-muted">Te recomendamos 1-2 programas según tu objetivo, nivel y días disponibles. Se copian a tu cuenta y los puedes editar.</p>
+              <LinkButton href="/rutinas" size="lg" className="mt-4">
+                Ver rutinas recomendadas <ArrowRight className="size-5" />
+              </LinkButton>
+            </div>
           ) : (
             <div>
               <Badge tone="neutral">Descanso</Badge>
               <h2 className="mt-2 text-xl font-extrabold">Hoy no hay gimnasio</h2>
-              <p className="text-sm text-muted">Camina para sumar pasos y, si quieres, haz la sesión corta en casa (caminata + core).</p>
+              <p className="text-sm text-muted">Descansar también es progresar. Camina para sumar pasos{extraSessions.length ? " o haz una sesión opcional" : ""}.</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                {homeSession && (
-                  <Button variant="soft" onClick={() => start(homeSession)}>
-                    <House className="size-4" /> Sesión en casa
+                {extraSessions.map((s) => (
+                  <Button key={s.key} variant="soft" onClick={() => start(s)}>
+                    <House className="size-4" /> {s.name}
                   </Button>
-                )}
+                ))}
                 <LinkButton href="/actividad" variant="outline">
                   <Footprints className="size-4" /> Registrar pasos
                 </LinkButton>
@@ -166,21 +171,6 @@ export default function TodayPage() {
             </div>
           )}
 
-          {canFloat && (
-            <div className="mt-4 rounded-2xl bg-sunken p-3">
-              <p className="flex items-center gap-2 text-sm font-semibold">
-                <CalendarPlus className="size-4 text-violet" /> Día extra de esta semana
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {(plan?.floatingWeekdays ?? [2, 4]).map((d) => (
-                  <Button key={d} size="sm" variant={floating === d ? "primary" : "outline"} onClick={() => setFloating(floating === d ? null : d)} aria-pressed={floating === d}>
-                    {floating === d ? "✓ " : ""}También voy el {WEEKDAY_LONG[d - 1]}
-                  </Button>
-                ))}
-              </div>
-              {!floating && isFloatingCandidate(plan, today) && <p className="mt-2 text-xs text-muted">Hoy es {WEEKDAY_LONG[isoWeekday(today) - 1]}: actívalo si vas a ir.</p>}
-            </div>
-          )}
         </Card>
 
         {/* Weekly progress ring */}

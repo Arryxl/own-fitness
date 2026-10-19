@@ -10,7 +10,7 @@ import { setsByMuscle, tonnageByMuscle } from "@/lib/analytics/volume";
 import type { AppData } from "@/components/providers/DataProvider";
 import type { WeeklyStats, Workout } from "@/lib/types";
 
-export function computeWeeklyStats(data: Pick<AppData, "activePlan" | "workouts" | "exerciseMap" | "bodyMetrics" | "meals" | "weekPlans">, date: string, extra?: Workout): WeeklyStats {
+export function computeWeeklyStats(data: Pick<AppData, "activePlan" | "workouts" | "exerciseMap" | "bodyMetrics" | "meals">, date: string, extra?: Workout): WeeklyStats {
   const ws = weekStart(date);
   const we = addDays(ws, 6);
   const key = isoWeekKey(date);
@@ -22,7 +22,7 @@ export function computeWeeklyStats(data: Pick<AppData, "activePlan" | "workouts"
   return {
     id: key,
     attended: new Set(week.map((w) => w.date)).size,
-    planned: plannedSessionsForWeek(data.activePlan, ws, data.weekPlans.get(key) ?? null).length,
+    planned: plannedSessionsForWeek(data.activePlan, ws).length,
     setsByMuscle: setsByMuscle(week, data.exerciseMap),
     tonnageByMuscle: tonnageByMuscle(week, data.exerciseMap),
     avgWeight7d: ma.at(-1)?.value ?? null,

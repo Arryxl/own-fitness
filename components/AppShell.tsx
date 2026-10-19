@@ -3,6 +3,8 @@
 import clsx from "clsx";
 import {
   Apple,
+  BookOpen,
+  UserCog,
   BarChart3,
   CalendarDays,
   CloudOff,
@@ -22,6 +24,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore, type ReactNode } from "react";
 import { useOptionalData } from "@/components/providers/DataProvider";
+import { useAuth } from "@/components/providers/AuthProvider";
 
 const PRIMARY = [
   { href: "/", label: "Hoy", icon: House },
@@ -31,6 +34,7 @@ const PRIMARY = [
 ];
 
 export const SECONDARY = [
+  { href: "/rutinas", label: "Rutinas", icon: BookOpen, desc: "Biblioteca de programas reconocidos" },
   { href: "/medidas", label: "Peso y medidas", icon: Ruler, desc: "Peso, cintura, pecho, brazo" },
   { href: "/actividad", label: "Pasos y caminata", icon: Footprints, desc: "Cardio ligero diario" },
   { href: "/nutricion", label: "Nutrición", icon: Apple, desc: "Proteína, comidas, presupuesto" },
@@ -82,6 +86,7 @@ function SyncPill() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { isAdmin } = useAuth();
   const moreActive = SECONDARY.some((s) => isActive(pathname, s.href)) || pathname === "/mas";
 
   return (
@@ -105,6 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {SECONDARY.map((n) => (
           <SideLink key={n.href} {...n} active={isActive(pathname, n.href)} />
         ))}
+        {isAdmin && <SideLink href="/admin" label="Administración" icon={UserCog} active={isActive(pathname, "/admin")} />}
         <div className="mt-auto px-2 pt-4">
           <SyncPill />
         </div>

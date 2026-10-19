@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AI_DEADLINE_MS } from "@/lib/ai/client";
-import { COACH_PROMPT_VERSION, buildCoachSystemPrompt } from "@/lib/ai/prompts/coach.v1";
+import { COACH_PROMPT_VERSION } from "@/lib/ai/prompts/coach.v2";
+import { coachPromptFor } from "@/lib/ai/prompts/summary";
 import { WeeklyReportSchema } from "@/lib/ai/schemas";
 import { generateStructured } from "@/lib/ai/structured";
 import { lastClosedWeek, runTool } from "@/lib/ai/tools";
@@ -61,14 +62,7 @@ export async function POST(req: Request) {
     const insufficient = spanDays < 14 || workouts.length < 3;
 
     const evidence = { periodStart: start, periodEnd: end, today, daysOfHistory: spanDays, profile, attendance, weight, measures, lifts, volume, nutrition, plan, memories };
-    const system = buildCoachSystemPrompt({
-      heightCm: p?.heightCm ?? null,
-      startWeightKg: p?.startWeightKg ?? null,
-      startDate: p?.startDate ?? null,
-      planName: (plan as { name?: string })?.name ?? null,
-      weeklyBudgetCop: p?.weeklyBudget ?? null,
-      today,
-    });
+    const system = await coachPromptFor(data);
     const input = `Genera el informe semanal del periodo ${start} a ${end}${type === "adhoc" ? " (semana aún abierta: análisis parcial)" : ""}.
 Evalúa las señales de la regla 8.2 usando SOLO estos datos (resultado de las herramientas, en JSON). No inventes cifras; si un dato falta, márcalo "unknown" y pide que lo registre.
 ${insufficient ? `Hay menos de 2 semanas de datos (${spanDays} días, ${workouts.length} sesiones): el veredicto DEBE ser insufficient_data; aun así da hasta 3 acciones útiles para empezar bien.` : ""}
@@ -77,7 +71,7 @@ Responde en JSON con el esquema indicado. summary: 2-4 frases con números. acti
 DATOS:
 ${JSON.stringify(evidence)}`;
 
-    const { data: out, model } = await generateStructured({ system, input, schema: WeeklyReportSchema, deadline, temperature: 0.3 });
+    const { data: out, model } = await generateStructured({ uid: ctx.user.uid, system, input, schema: WeeklyReportSchema, deadline, temperature: 0.3 });
     const verdict = insufficient ? "insufficient_data" : out.verdict;
 
     const ref = reports.doc();

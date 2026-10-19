@@ -53,5 +53,4 @@ service-account*.json
 *-service-account.json
 !.env.example
 
-# generated from firestore.rules.tmpl (contains the allowlisted email)
-/firestore.rules
+/.tools/

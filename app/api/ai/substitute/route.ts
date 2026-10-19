@@ -31,6 +31,7 @@ export async function POST(req: Request) {
       ...exercises.filter((e) => !e.available).map((e) => e.name),
     ];
     const { data } = await generateStructured({
+      uid: ctx.user.uid,
       system: SYSTEM,
       input: `Ejercicio: ${ex.name} (patrón: ${ex.family}, músculo: ${ex.primaryMuscle}, equipo: ${ex.equipment.join(", ")}).
 Motivo: ${REASON_LABEL[parsed.data.reason]}.

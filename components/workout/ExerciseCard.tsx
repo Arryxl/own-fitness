@@ -76,8 +76,11 @@ export function ExerciseCard({
   const done = working.filter((s) => s.done).length;
   const complete = working.length > 0 && done === working.length;
   const substituted = !!entry.plannedExerciseId && entry.plannedExerciseId !== entry.exerciseId;
-  const isTimed = exercise.metric === "seconds";
-  const unloaded = exercise.equipment.includes("bodyweight") && !exercise.equipment.some((e) => e !== "bodyweight" && e !== "bench");
+  const metric = entry.repUnit ?? exercise.metric;
+  const isTimed = metric === "seconds";
+  const isCardio = metric === "minutes";
+  const unloaded = isCardio || (exercise.equipment.includes("bodyweight") && !exercise.equipment.some((e) => e !== "bodyweight" && e !== "bench"));
+  const repsLabel = isCardio ? "Min" : isTimed ? "Seg" : "Reps";
   const lastText = lastLabel(last, exercise);
 
   function setSet(i: number, patch: Partial<WorkoutSet>) {
@@ -127,10 +130,15 @@ export function ExerciseCard({
         <span className="min-w-0 flex-1">
           <span className="block font-bold leading-tight">{exercise.name}</span>
           <span className="mt-0.5 block truncate text-xs text-muted">
-            {item ? `${item.sets} × ${item.repMin}-${item.repMax}${isTimed ? " s" : ""} · RIR ${item.rirTarget}` : "Ejercicio añadido"}
+            {item
+              ? isCardio
+                ? `${item.repMin}-${item.repMax} min`
+                : `${item.sets} × ${item.repMin === item.repMax ? item.repMin : `${item.repMin}-${item.repMax}`}${isTimed ? " s" : ""} · RIR ${item.rirTarget}`
+              : "Ejercicio añadido"}
             {lastText ? ` · Última: ${lastText}` : ""}
           </span>
         </span>
+        {item?.supersetGroup && <Badge tone="amber">Superserie {item.supersetGroup}</Badge>}
         {substituted && <Badge tone="violet">Sustituto</Badge>}
         <ChevronDown className={clsx("size-5 shrink-0 text-muted transition", expanded && "rotate-180")} />
       </button>
@@ -154,6 +162,8 @@ export function ExerciseCard({
               {suggestion.warning && <p className="mt-1 pl-6 text-xs">{suggestion.warning}</p>}
             </div>
           )}
+          {item?.notes && <p className="rounded-2xl bg-sunken px-3 py-2 text-xs">📌 {item.notes}</p>}
+          {item?.supersetGroup && <p className="text-xs text-muted">Superserie opcional: alterna con el otro ejercicio de la letra {item.supersetGroup} para ahorrar tiempo.</p>}
           {exercise.cues && <p className="text-xs text-muted">💡 {exercise.cues}</p>}
 
           {!unloaded && (
@@ -179,7 +189,7 @@ export function ExerciseCard({
             <div className="grid grid-cols-[2rem_1fr_1fr_3.5rem_3.25rem] items-center gap-2 px-1 text-[0.7rem] font-semibold uppercase tracking-wide text-muted">
               <span>Serie</span>
               <span>{unloaded ? "Lastre" : unit}</span>
-              <span>{isTimed ? "Seg" : "Reps"}</span>
+              <span>{repsLabel}</span>
               <span>RIR</span>
               <span className="sr-only">Hecha</span>
             </div>
@@ -213,7 +223,7 @@ export function ExerciseCard({
                 <input
                   inputMode="numeric"
                   enterKeyHint="done"
-                  aria-label={`${isTimed ? "Segundos" : "Repeticiones"} serie ${i + 1}`}
+                  aria-label={`${isCardio ? "Minutos" : isTimed ? "Segundos" : "Repeticiones"} serie ${i + 1}`}
                   placeholder={String(suggestion?.targetReps ?? item?.repMin ?? "")}
                   value={s.reps ?? ""}
                   onChange={(e) => {

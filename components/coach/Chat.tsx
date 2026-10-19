@@ -8,7 +8,7 @@ import { authedFetch, useAuth } from "@/components/providers/AuthProvider";
 import { useData } from "@/components/providers/DataProvider";
 import { useOnline } from "@/components/AppShell";
 import { todayISO } from "@/lib/analytics/dates";
-import { isDemo } from "@/lib/demo";
+import { useAiEnabled } from "@/lib/hooks/useAi";
 import { getDb } from "@/lib/firebase/client";
 import type { ChatMessage } from "@/lib/types";
 import { RichText } from "./RichText";
@@ -24,7 +24,6 @@ const SUGGESTIONS = [
 function useMessages(uid: string, chatId: string) {
   const [msgs, setMsgs] = useState<ChatMessage[]>([]);
   useEffect(() => {
-    if (isDemo) return;
     const q = query(collection(getDb(), "users", uid, "aiChats", chatId, "messages"), orderBy("ts", "asc"), limitToLast(60));
     return onSnapshot(q, (s) => setMsgs(s.docs.map((d) => ({ ...(d.data() as ChatMessage), id: d.id }))));
   }, [uid, chatId]);
@@ -82,7 +81,8 @@ export function Chat({ onProposal }: { onProposal: () => void }) {
 
   // Hide the streaming bubble once the saved messages arrive through the listener.
   const visiblePending = pending && !(pending.done && !pending.error && messages.at(-1)?.role === "model" && messages.at(-1)?.id !== pending.lastId) ? pending : null;
-  const disabled = isDemo || !online;
+  const ai = useAiEnabled();
+  const disabled = !ai.enabled || !online;
 
   return (
     <div className="flex min-h-[60dvh] flex-col">
@@ -166,7 +166,7 @@ export function Chat({ onProposal }: { onProposal: () => void }) {
                 send(input);
               }
             }}
-            placeholder={isDemo ? "IA no disponible en modo demo" : online ? "Escribe tu pregunta…" : "Sin conexión"}
+            placeholder={!ai.enabled ? "Coach desactivado" : online ? "Escribe tu pregunta…" : "Sin conexión"}
             disabled={disabled}
             maxLength={2000}
             className="max-h-40 min-h-12 flex-1 resize-none bg-transparent px-3 py-3 text-base outline-none placeholder:text-muted"

@@ -1,13 +1,12 @@
 // Export / import of all user data (JSON backup + CSV for spreadsheets).
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
-import { demoCollection, demoProfile, isDemo } from "@/lib/demo";
 import { getDb } from "@/lib/firebase/client";
 import { tsToISODate } from "@/lib/analytics/dates";
 import type { BodyMetric, Exercise, Meal, Workout, Activity } from "@/lib/types";
 import { batchPut, type UserCollection } from "./db/write";
 
 export const BACKUP_COLLECTIONS: UserCollection[] = [
-  "exercises",
+  "exerciseOverrides",
   "personalRecords",
   "plans",
   "workouts",
@@ -25,7 +24,7 @@ export const BACKUP_COLLECTIONS: UserCollection[] = [
 
 export interface Backup {
   app: "ironlog";
-  version: 1;
+  version: 2;
   exportedAt: string;
   profile: Record<string, unknown> | null;
   collections: Partial<Record<UserCollection, Record<string, unknown>[]>>;
@@ -41,10 +40,7 @@ function clean(d: Record<string, unknown>): Record<string, unknown> {
 export async function exportAll(uid: string): Promise<Backup> {
   const collections: Backup["collections"] = {};
   let profile: Record<string, unknown> | null;
-  if (isDemo) {
-    profile = demoProfile();
-    for (const c of BACKUP_COLLECTIONS) collections[c] = demoCollection(c).map(clean);
-  } else {
+  {
     const db = getDb();
     profile = ((await getDoc(doc(db, "users", uid))).data() as Record<string, unknown>) ?? null;
     await Promise.all(
@@ -54,12 +50,12 @@ export async function exportAll(uid: string): Promise<Backup> {
       }),
     );
   }
-  return { app: "ironlog", version: 1, exportedAt: new Date().toISOString(), profile, collections };
+  return { app: "ironlog", version: 2, exportedAt: new Date().toISOString(), profile, collections };
 }
 
 export function parseBackup(text: string): Backup {
   const b = JSON.parse(text) as Backup;
-  if (b?.app !== "ironlog" || b.version !== 1 || typeof b.collections !== "object") throw new Error("El archivo no es un respaldo válido de IronLog.");
+  if (b?.app !== "ironlog" || b.version !== 2 || typeof b.collections !== "object") throw new Error("El archivo no es un respaldo válido de IronLog.");
   for (const [k, v] of Object.entries(b.collections)) {
     if (!BACKUP_COLLECTIONS.includes(k as UserCollection) || !Array.isArray(v)) throw new Error(`Colección desconocida en el respaldo: ${k}`);
     for (const d of v) if (!d || typeof d !== "object" || typeof (d as { id?: unknown }).id !== "string") throw new Error(`Documento sin id en ${k}`);
@@ -92,8 +88,7 @@ function toCsv(header: string[], rows: unknown[][]): string {
 }
 
 /** Flat CSVs: one row per set, per measurement, per meal and per activity day. */
-export function backupToCsv(b: Backup): Record<string, string> {
-  const ex = new Map(((b.collections.exercises ?? []) as unknown as Exercise[]).map((e) => [e.id, e]));
+export function backupToCsv(b: Backup, ex: Map<string, Exercise>): Record<string, string> {
   const sets: unknown[][] = [];
   for (const w of (b.collections.workouts ?? []) as unknown as Workout[]) {
     for (const e of w.entries ?? []) {

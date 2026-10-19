@@ -1,119 +1,303 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowLeft, ArrowRight, CalendarDays, Dumbbell, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Dumbbell, HeartPulse, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { useData } from "@/components/providers/DataProvider";
-import { useToast } from "@/components/providers/ToastProvider";
-import { Button, Field, Input, parseNum } from "@/components/ui";
-import { seedUser } from "@/lib/db/seed";
+import { Field, Input, Select, TextArea, Toggle, parseNum } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { todayISO } from "@/lib/analytics/dates";
+import { patchProfile } from "@/lib/db/write";
+import { EQUIPMENT_LABEL, GOAL_LABEL, LEVEL_LABEL, WEEKDAY_LONG } from "@/lib/format";
+import { COUNTRIES, DIET_RESTRICTIONS, MIN_AGE, defaultProfile, isAdult } from "@/lib/profile";
+import type { Equipment, Goal, Level, Profile, Sex, UnitsPref } from "@/lib/types";
 
-const STEPS = ["Hola", "Tus datos", "Tu plan", "Extras"] as const;
+const STEPS = ["Bienvenida", "Sobre ti", "Objetivo", "Tu gimnasio", "Comida", "Coach IA"] as const;
+const AI_TIER = process.env.NEXT_PUBLIC_GEMINI_TIER ?? "free";
+const TOGGLE_EQUIPMENT: Equipment[] = ["machine", "dumbbell", "cable", "smith", "barbell", "rack", "bench", "band"];
+
+type Draft = Omit<Profile, "createdAt" | "schemaVersion" | "timezone" | "activePlanId" | "proteinTargetG" | "stepsBaseline" | "restTimerDefaultSec">;
+
+function draftFrom(p: Profile): Draft {
+  const { createdAt: _c, schemaVersion: _s, timezone: _t, activePlanId: _a, proteinTargetG: _p, stepsBaseline: _b, restTimerDefaultSec: _r, ...rest } = p;
+  void [_c, _s, _t, _a, _p, _b, _r];
+  return rest;
+}
 
 export default function WelcomePage() {
   const data = useData();
+  const { user } = useAuth();
   const router = useRouter();
-  const toast = useToast();
-  const [step, setStep] = useState(0);
+  const today = todayISO();
+  const editing = !!data.profile?.onboardingCompletedAt;
+  const [step, setStep] = useState(() => (editing ? 1 : Math.min(data.profile?.onboardingStep ?? 0, STEPS.length - 1)));
+  const [d, setD] = useState<Draft>(() => draftFrom(data.profile ?? defaultProfile(user?.displayName ?? null, Date.now(), today)));
   const [saving, setSaving] = useState(false);
-  const [f, setF] = useState({ height: "", weight: "", waist: "", plan: "plan_3d", budget: "", steps: "" });
+  const set = (patch: Partial<Draft>) => setD((x) => ({ ...x, ...patch }));
 
-  // Profile exists (already onboarded, or the seed just landed in the local cache): go home.
+  // First visit: create the profile document so progress can be resumed.
   useEffect(() => {
-    if (data.profileState === "ready") router.replace("/");
-  }, [data.profileState, router]);
+    if (data.profileState === "missing") patchProfile(data.uid, defaultProfile(user?.displayName ?? null, Date.now(), today));
+  }, [data.profileState, data.uid, user, today]);
 
-  async function finish() {
-    setSaving(true);
-    try {
-      // The local cache updates immediately and the effect above navigates;
-      // the commit promise only resolves once the server has the data.
-      await seedUser(data.uid, {
-        heightCm: parseNum(f.height),
-        weightKg: parseNum(f.weight),
-        waistCm: parseNum(f.waist),
-        planId: f.plan,
-        weeklyBudget: parseNum(f.budget),
-        stepsBaseline: parseNum(f.steps),
-      });
-    } catch (e) {
-      setSaving(false);
-      toast(`No se pudo guardar: ${(e as Error).message}`, "error");
+  const adult = isAdult(d.birthDate, today);
+  const valid = [
+    !!d.privacyAcceptedAt && !!d.healthAcceptedAt,
+    !!d.displayName?.trim() && adult && !!d.heightCm && !!d.startWeightKg,
+    !!d.goal && !!d.level && d.trainingDays.length >= 2,
+    true,
+    !!d.country && !!d.currency,
+    true,
+  ];
+
+  function save(nextStep: number, extra: Partial<Profile> = {}) {
+    patchProfile(data.uid, { ...d, ...extra, onboardingStep: nextStep });
+  }
+
+  function next() {
+    if (!valid[step]) return;
+    if (step < STEPS.length - 1) {
+      save(step + 1);
+      setStep(step + 1);
+      return;
     }
+    setSaving(true);
+    save(step, { onboardingCompletedAt: data.profile?.onboardingCompletedAt ?? Date.now() });
+    router.replace(editing ? "/ajustes" : "/rutinas");
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-lg flex-col px-5 py-8">
-      <div className="mb-6 flex gap-1.5" aria-label={`Paso ${step + 1} de ${STEPS.length}`}>
+    <main className="mx-auto flex min-h-dvh max-w-xl flex-col px-5 py-8">
+      <div className="mb-2 flex items-center justify-between text-sm text-muted">
+        <span>
+          Paso {step + 1} de {STEPS.length} · {STEPS[step]}
+        </span>
+        {editing && (
+          <Link href="/ajustes" className="font-semibold text-primary">
+            Cancelar
+          </Link>
+        )}
+      </div>
+      <div className="mb-6 flex gap-1.5" aria-hidden>
         {STEPS.map((s, i) => (
           <span key={s} className={clsx("h-1.5 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-sunken")} />
         ))}
       </div>
 
-      <div className="glass animate-rise flex-1 rounded-[2rem] p-6" key={step}>
+      <div className="glass animate-rise flex-1 space-y-4 rounded-[2rem] p-6" key={step}>
         {step === 0 && (
-          <div className="space-y-4">
+          <>
             <span className="flex size-14 items-center justify-center rounded-3xl bg-primary text-on-primary">
               <Dumbbell className="size-7 -rotate-30" />
             </span>
             <h1 className="text-3xl font-extrabold leading-tight">
-              Vamos a <span className="text-primary">empezar</span>
+              Bienvenido a <span className="text-primary">IronLog</span>
             </h1>
-            <p className="text-muted">
-              Prepararé tu catálogo de ejercicios (con alternativas sin compañero), los planes de 3 y 4 días, el catálogo de alimentos baratos y tus marcas iniciales.
-            </p>
-            <p className="flex gap-2 rounded-2xl bg-sunken p-3 text-sm text-muted">
-              <ShieldCheck className="size-5 shrink-0 text-primary" /> Puedes omitir cualquier dato y completarlo después. Nada se bloquea por datos faltantes.
-            </p>
-          </div>
+            <p className="text-muted">Unas preguntas para recomendarte una rutina y calcular tus metas. Puedes dejar esto a medias y retomarlo después.</p>
+            <div className="flex gap-3 rounded-2xl bg-amber-soft p-4 text-sm">
+              <HeartPulse className="size-5 shrink-0 text-amber" />
+              <div>
+                <p className="font-semibold text-ink">Aviso de salud</p>
+                <p className="mt-1 text-muted">
+                  IronLog no sustituye a un médico, fisioterapeuta ni nutricionista. Si tienes una condición de salud, lesión, embarazo, o tomas medicación, consulta a un profesional antes de empezar. Ante dolor agudo, mareo o dolor en el pecho, detén el ejercicio y busca atención.
+                </p>
+              </div>
+            </div>
+            <label className="flex min-h-12 items-start gap-3 text-sm">
+              <input type="checkbox" className="mt-1 size-5 accent-[var(--primary)]" checked={!!d.healthAcceptedAt} onChange={(e) => set({ healthAcceptedAt: e.target.checked ? Date.now() : null })} />
+              <span>Entiendo y acepto el aviso de salud.</span>
+            </label>
+            <label className="flex min-h-12 items-start gap-3 text-sm">
+              <input type="checkbox" className="mt-1 size-5 accent-[var(--primary)]" checked={!!d.privacyAcceptedAt} onChange={(e) => set({ privacyAcceptedAt: e.target.checked ? Date.now() : null })} />
+              <span>
+                He leído y acepto la{" "}
+                <Link href="/privacidad" target="_blank" className="font-semibold text-primary underline">
+                  política de privacidad
+                </Link>{" "}
+                (qué datos se guardan, para qué y cómo borrarlos).
+              </span>
+            </label>
+          </>
         )}
+
         {step === 1 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-extrabold">Tus datos de hoy</h2>
-            <p className="text-sm text-muted">Opcional. La cintura se mide a la altura del ombligo.</p>
-            <Field label="Estatura (cm)">{(id) => <Input id={id} inputMode="decimal" placeholder="182" value={f.height} onChange={(e) => setF({ ...f, height: e.target.value })} />}</Field>
-            <Field label="Peso (kg)">{(id) => <Input id={id} inputMode="decimal" placeholder="73,5" value={f.weight} onChange={(e) => setF({ ...f, weight: e.target.value })} />}</Field>
-            <Field label="Cintura (cm)">{(id) => <Input id={id} inputMode="decimal" value={f.waist} onChange={(e) => setF({ ...f, waist: e.target.value })} />}</Field>
-          </div>
+          <>
+            <h2 className="text-2xl font-extrabold">Sobre ti</h2>
+            <Field label="Nombre o alias">{(id) => <Input id={id} value={d.displayName ?? ""} onChange={(e) => set({ displayName: e.target.value.slice(0, 40) })} />}</Field>
+            <Field label="Fecha de nacimiento" hint={`Solo mayores de ${MIN_AGE} años. No se comparte con la IA (solo tu edad).`}>
+              {(id) => <Input id={id} type="date" max={today} value={d.birthDate ?? ""} onChange={(e) => set({ birthDate: e.target.value || null })} />}
+            </Field>
+            {d.birthDate && !adult && (
+              <p role="alert" className="rounded-2xl bg-danger-soft px-3 py-2 text-sm text-danger">
+                IronLog es solo para mayores de {MIN_AGE} años.
+              </p>
+            )}
+            <fieldset>
+              <legend className="text-sm font-semibold">Sexo (para la fórmula de gasto energético)</legend>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ["male", "Hombre"],
+                    ["female", "Mujer"],
+                    ["other", "Prefiero no decir"],
+                  ] as [Sex, string][]
+                ).map(([v, l]) => (
+                  <Chip key={v} on={d.sex === v} onClick={() => set({ sex: v })}>
+                    {l}
+                  </Chip>
+                ))}
+              </div>
+            </fieldset>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Estatura (cm)">{(id) => <Input id={id} inputMode="decimal" value={d.heightCm ?? ""} onChange={(e) => set({ heightCm: parseNum(e.target.value) })} />}</Field>
+              <Field label="Peso (kg)">{(id) => <Input id={id} inputMode="decimal" value={d.startWeightKg ?? ""} onChange={(e) => set({ startWeightKg: parseNum(e.target.value) })} />}</Field>
+            </div>
+          </>
         )}
+
         {step === 2 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-extrabold">¿Qué plan usas?</h2>
-            {[
-              { id: "plan_3d", title: "3 días · L-M-V", text: "Cuerpo completo con énfasis en torso." },
-              { id: "plan_4d", title: "4 días · L-M-V + flotante", text: "Día extra (martes o jueves) de brazos, hombros y pecho superior. Lo activas semana a semana." },
-            ].map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                aria-pressed={f.plan === p.id}
-                onClick={() => setF({ ...f, plan: p.id })}
-                className={clsx(
-                  "flex w-full items-start gap-3 rounded-3xl border-2 p-4 text-left transition",
-                  f.plan === p.id ? "border-primary bg-primary-soft/60" : "border-line bg-surface-strong",
-                )}
-              >
-                <CalendarDays className="mt-0.5 size-5 shrink-0 text-primary" />
-                <span>
-                  <span className="block font-bold">{p.title}</span>
-                  <span className="block text-sm text-muted">{p.text}</span>
-                </span>
-              </button>
-            ))}
-            <p className="text-xs text-muted">Puedes cambiarlo y editar las plantillas cuando quieras.</p>
-          </div>
+          <>
+            <h2 className="text-2xl font-extrabold">Tu objetivo</h2>
+            <div className="grid gap-2">
+              {(Object.keys(GOAL_LABEL) as Goal[]).map((g) => (
+                <Card key={g} on={d.goal === g} onClick={() => set({ goal: g })} title={GOAL_LABEL[g]} text={g === "hipertrofia" ? "Ganar masa muscular." : g === "fuerza" ? "Levantar más en los ejercicios básicos." : "Perder grasa conservando músculo."} />
+              ))}
+            </div>
+            <fieldset>
+              <legend className="text-sm font-semibold">Nivel</legend>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {(Object.keys(LEVEL_LABEL) as Level[]).map((l) => (
+                  <Chip key={l} on={d.level === l} onClick={() => set({ level: l })}>
+                    {LEVEL_LABEL[l]}
+                  </Chip>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-muted">Principiante: menos de ~6 meses entrenando de forma constante.</p>
+            </fieldset>
+            <fieldset>
+              <legend className="text-sm font-semibold">¿Qué días puedes entrenar?</legend>
+              <div className="mt-2 grid grid-cols-7 gap-1.5">
+                {WEEKDAY_LONG.map((w, i) => {
+                  const day = i + 1;
+                  const on = d.trainingDays.includes(day);
+                  return (
+                    <button
+                      key={w}
+                      type="button"
+                      aria-pressed={on}
+                      aria-label={w}
+                      onClick={() => set({ trainingDays: on ? d.trainingDays.filter((x) => x !== day) : [...d.trainingDays, day].sort() })}
+                      className={clsx("h-12 rounded-xl text-sm font-bold capitalize", on ? "bg-primary text-on-primary" : "bg-sunken text-muted")}
+                    >
+                      {w.slice(0, 2)}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-xs text-muted">{d.trainingDays.length} días por semana (mínimo 2).</p>
+            </fieldset>
+          </>
         )}
+
         {step === 3 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-extrabold">Últimos detalles</h2>
-            <Field label="Presupuesto semanal de comida (COP)" hint="Lo usa la IA para armar menús. Opcional.">
-              {(id) => <Input id={id} inputMode="numeric" value={f.budget} onChange={(e) => setF({ ...f, budget: e.target.value })} />}
+          <>
+            <h2 className="text-2xl font-extrabold">Tu gimnasio</h2>
+            <p className="text-sm text-muted">Desmarca lo que no hay. Los ejercicios que lo necesiten quedarán como no disponibles y la app usará sus alternativas. Lo puedes ajustar ejercicio por ejercicio después.</p>
+            <div className="rounded-2xl bg-sunken px-3">
+              {TOGGLE_EQUIPMENT.map((e) => (
+                <Toggle
+                  key={e}
+                  label={EQUIPMENT_LABEL[e]}
+                  checked={!d.unavailableEquipment.includes(e)}
+                  onChange={(on) => set({ unavailableEquipment: on ? d.unavailableEquipment.filter((x) => x !== e) : [...d.unavailableEquipment, e] })}
+                />
+              ))}
+            </div>
+            <Field label="Lesiones o molestias (opcional)" hint="Ej.: molestia en hombro derecho al empujar por encima de la cabeza. El coach lo tendrá en cuenta; no diagnostica.">
+              {(id) => <TextArea id={id} value={d.injuries} maxLength={500} onChange={(e) => set({ injuries: e.target.value })} />}
             </Field>
-            <Field label="Pasos diarios actuales (aprox.)" hint="Tu meta será esto + 2 500, entre 8 000 y 10 000.">
-              {(id) => <Input id={id} inputMode="numeric" value={f.steps} onChange={(e) => setF({ ...f, steps: e.target.value })} />}
+            <Field label="Unidades de peso">
+              {(id) => (
+                <Select id={id} value={d.units} onChange={(e) => set({ units: e.target.value as UnitsPref })}>
+                  <option value="mixed">Mixto: según el equipo (mancuernas y máquinas en lb)</option>
+                  <option value="kg">Todo en kg</option>
+                  <option value="lb">Todo en lb</option>
+                </Select>
+              )}
             </Field>
-          </div>
+          </>
+        )}
+
+        {step === 4 && (
+          <>
+            <h2 className="text-2xl font-extrabold">Comida</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="País">
+                {(id) => (
+                  <Select
+                    id={id}
+                    value={d.country}
+                    onChange={(e) => {
+                      const c = COUNTRIES.find((x) => x.code === e.target.value);
+                      set({ country: e.target.value, currency: c?.currency ?? d.currency });
+                    }}
+                  >
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+              <Field label="Moneda">{(id) => <Input id={id} value={d.currency} maxLength={3} onChange={(e) => set({ currency: e.target.value.toUpperCase() })} />}</Field>
+            </div>
+            <Field label={`Presupuesto semanal de comida (${d.currency})`} hint="Opcional. La IA lo usa para proponer menús; nunca inventa precios.">
+              {(id) => <Input id={id} inputMode="numeric" value={d.weeklyBudget ?? ""} onChange={(e) => set({ weeklyBudget: parseNum(e.target.value) })} />}
+            </Field>
+            <fieldset>
+              <legend className="text-sm font-semibold">Restricciones alimentarias</legend>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {DIET_RESTRICTIONS.map((r) => {
+                  const on = d.dietaryRestrictions.includes(r.id);
+                  return (
+                    <Chip key={r.id} on={on} onClick={() => set({ dietaryRestrictions: on ? d.dietaryRestrictions.filter((x) => x !== r.id) : [...d.dietaryRestrictions, r.id] })}>
+                      {r.label}
+                    </Chip>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <Field label="Otras restricciones o alergias (opcional)">{(id) => <Input id={id} value={d.dietNotes} maxLength={200} onChange={(e) => set({ dietNotes: e.target.value })} />}</Field>
+          </>
+        )}
+
+        {step === 5 && (
+          <>
+            <span className="flex size-12 items-center justify-center rounded-2xl bg-violet-soft text-violet">
+              <Sparkles className="size-6" />
+            </span>
+            <h2 className="text-2xl font-extrabold">Coach de IA (opcional)</h2>
+            <p className="text-sm text-muted">
+              El coach usa Gemini (Google) para analizar tus métricas: series, cargas, peso, medidas, comidas y notas. Nunca enviamos tu nombre, email ni fecha de nacimiento (solo tu edad).
+            </p>
+            {AI_TIER === "free" && (
+              <p className="flex gap-2 rounded-2xl bg-amber-soft p-3 text-sm text-amber">
+                <ShieldCheck className="size-5 shrink-0" /> Usamos la capa gratuita de Gemini: Google puede usar el contenido que se envía para mejorar sus productos.
+              </p>
+            )}
+            <div className="rounded-2xl bg-sunken px-3">
+              <Toggle
+                checked={d.aiConsent.accepted}
+                onChange={(v) => set({ aiConsent: { accepted: v, at: v ? Date.now() : null } })}
+                label="Acepto usar el coach de IA con mis datos"
+                description="Puedes activarlo o desactivarlo cuando quieras en Ajustes. Sin esto, todo lo demás funciona igual."
+              />
+            </div>
+          </>
         )}
       </div>
 
@@ -123,16 +307,37 @@ export default function WelcomePage() {
             <ArrowLeft className="size-4" /> Atrás
           </Button>
         )}
-        {step < STEPS.length - 1 ? (
-          <Button className="flex-1" onClick={() => setStep(step + 1)}>
-            {step === 1 && !f.weight && !f.height ? "Omitir" : "Siguiente"} <ArrowRight className="size-4" />
-          </Button>
-        ) : (
-          <Button className="flex-1" onClick={finish} disabled={saving}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : null} Empezar
-          </Button>
-        )}
+        <Button className="flex-1" onClick={next} disabled={!valid[step] || saving}>
+          {saving ? <Loader2 className="size-4 animate-spin" /> : step === STEPS.length - 1 ? <Check className="size-4" /> : null}
+          {step === STEPS.length - 1 ? (editing ? "Guardar cambios" : "Ver rutinas recomendadas") : "Siguiente"}
+          {step < STEPS.length - 1 && <ArrowRight className="size-4" />}
+        </Button>
       </div>
     </main>
+  );
+}
+
+function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button type="button" aria-pressed={on} onClick={onClick} className={clsx("min-h-11 rounded-full px-4 text-sm font-semibold", on ? "bg-primary text-on-primary" : "bg-sunken text-muted")}>
+      {children}
+    </button>
+  );
+}
+
+function Card({ on, onClick, title, text }: { on: boolean; onClick: () => void; title: string; text: string }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={clsx("flex w-full items-start gap-3 rounded-3xl border-2 p-4 text-left transition", on ? "border-primary bg-primary-soft/60" : "border-line bg-surface-strong")}
+    >
+      <span className={clsx("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2", on ? "border-primary bg-primary text-on-primary" : "border-line")}>{on && <Check className="size-3" />}</span>
+      <span>
+        <span className="block font-bold">{title}</span>
+        <span className="block text-sm text-muted">{text}</span>
+      </span>
+    </button>
   );
 }

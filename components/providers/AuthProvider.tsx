@@ -2,114 +2,108 @@
 
 import {
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   getRedirectResult,
-  onAuthStateChanged,
+  onIdTokenChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
   signOut as fbSignOut,
+  updateProfile,
   type User,
 } from "firebase/auth";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { firebaseConfigured, getClientAuth } from "@/lib/firebase/client";
-import { DEMO_UID, isDemo } from "@/lib/demo";
 
-const demoUser = {
-  uid: DEMO_UID,
-  email: null,
-  displayName: "Demo",
-  getIdToken: async () => "demo",
-} as unknown as User;
-
-type Status = "loading" | "signed_out" | "signed_in" | "denied" | "unconfigured";
+type Status = "loading" | "signed_out" | "unverified" | "signed_in" | "unconfigured";
 
 interface AuthCtx {
   status: Status;
   user: User | null;
+  isAdmin: boolean;
   error: string | null;
-  signIn: () => Promise<void>;
+  clearError: () => void;
+  signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<boolean>;
+  signUpWithEmail: (email: string, password: string, alias: string) => Promise<boolean>;
+  resetPassword: (email: string) => Promise<boolean>;
+  resendVerification: () => Promise<boolean>;
+  refreshUser: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-const allowKey = (uid: string) => `ironlog:allowed:${uid}`;
-
-function safeGet(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-function safeSet(key: string, v: string | null) {
-  try {
-    if (v == null) localStorage.removeItem(key);
-    else localStorage.setItem(key, v);
-  } catch {
-    /* storage unavailable: ignore */
-  }
+/** Google accounts are verified by Google; email/password accounts must confirm their address. */
+function isVerified(u: User): boolean {
+  return u.emailVerified || u.providerData.some((p) => p.providerId === "google.com");
 }
 
-/** Asks the server whether this account is on the allowlist. Offline → trust a cached "yes". */
-async function checkAllowed(user: User): Promise<boolean> {
-  const cached = safeGet(allowKey(user.uid)) === "1";
-  try {
-    const token = await user.getIdToken();
-    const res = await fetch("/api/auth/check", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
-    if (res.status === 403) return false;
-    if (res.ok) {
-      safeSet(allowKey(user.uid), "1");
-      return true;
-    }
-    return cached || res.status >= 500; // server misconfigured: Firestore rules still protect data
-  } catch {
-    return true; // offline: the Firestore rules are the real gate
-  }
+export function friendlyAuthError(e: unknown): string {
+  const code = (e as { code?: string }).code ?? "";
+  const map: Record<string, string> = {
+    "auth/invalid-credential": "Correo o contraseña incorrectos.",
+    "auth/invalid-login-credentials": "Correo o contraseña incorrectos.",
+    "auth/wrong-password": "Correo o contraseña incorrectos.",
+    "auth/user-not-found": "Correo o contraseña incorrectos.",
+    "auth/email-already-in-use": "Ya existe una cuenta con ese correo. Inicia sesión o recupera tu contraseña.",
+    "auth/weak-password": "La contraseña debe tener al menos 8 caracteres.",
+    "auth/invalid-email": "El correo no es válido.",
+    "auth/too-many-requests": "Demasiados intentos. Espera unos minutos y vuelve a intentar.",
+    "auth/user-disabled": "Esta cuenta está bloqueada. Si crees que es un error, contacta al administrador.",
+    "auth/network-request-failed": "Sin conexión. Conéctate para iniciar sesión.",
+    "auth/unauthorized-domain": "Este dominio no está autorizado en Firebase Auth (Ajustes → Dominios autorizados).",
+    "auth/requires-recent-login": "Por seguridad, vuelve a iniciar sesión e inténtalo de nuevo.",
+  };
+  return map[code] ?? "No se pudo completar la acción. Intenta de nuevo.";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<Status>(isDemo || firebaseConfigured ? "loading" : "unconfigured");
+  const [status, setStatus] = useState<Status>(firebaseConfigured ? "loading" : "unconfigured");
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isDemo) {
-      // Set after mount so nothing time-dependent renders during prerender.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setUser(demoUser);
-      setStatus("signed_in");
-      return;
-    }
     if (!firebaseConfigured) return;
     const auth = getClientAuth();
     getRedirectResult(auth).catch((e) => setError(friendlyAuthError(e)));
-    return onAuthStateChanged(auth, async (u) => {
+    return onIdTokenChanged(auth, async (u) => {
+      setUser(u);
       if (!u) {
-        setUser(null);
+        setIsAdmin(false);
         setStatus("signed_out");
         return;
       }
-      setUser(u);
-      setStatus(safeGet(allowKey(u.uid)) === "1" ? "signed_in" : "loading");
-      const ok = await checkAllowed(u);
-      if (!ok) {
-        safeSet(allowKey(u.uid), null);
-        await fbSignOut(auth);
-        setUser(null);
-        setStatus("denied");
-        return;
+      try {
+        const token = await u.getIdTokenResult();
+        setIsAdmin(token.claims.admin === true);
+      } catch {
+        setIsAdmin(false);
       }
-      setStatus("signed_in");
+      setStatus(isVerified(u) ? "signed_in" : "unverified");
     });
   }, []);
 
-  const signIn = useCallback(async () => {
+  const run = useCallback(async (fn: () => Promise<unknown>): Promise<boolean> => {
     setError(null);
-    if (isDemo) return;
+    try {
+      await fn();
+      return true;
+    } catch (e) {
+      setError(friendlyAuthError(e));
+      return false;
+    }
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    setError(null);
     const auth = getClientAuth();
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    const standalone = typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches;
+    const standalone = window.matchMedia("(display-mode: standalone)").matches;
     try {
       // Installed PWAs (especially iOS) handle popups poorly; use redirect there.
       if (standalone) await signInWithRedirect(auth, provider);
@@ -124,20 +118,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const signInWithEmail = useCallback((email: string, password: string) => run(() => signInWithEmailAndPassword(getClientAuth(), email.trim(), password)), [run]);
+
+  const signUpWithEmail = useCallback(
+    (email: string, password: string, alias: string) =>
+      run(async () => {
+        if (password.length < 8) throw { code: "auth/weak-password" };
+        const cred = await createUserWithEmailAndPassword(getClientAuth(), email.trim(), password);
+        if (alias.trim()) await updateProfile(cred.user, { displayName: alias.trim().slice(0, 40) });
+        await sendEmailVerification(cred.user, { url: `${window.location.origin}/` });
+      }),
+    [run],
+  );
+
+  const resetPassword = useCallback(
+    (email: string) => run(() => sendPasswordResetEmail(getClientAuth(), email.trim(), { url: `${window.location.origin}/login` })),
+    [run],
+  );
+
+  const resendVerification = useCallback(
+    () =>
+      run(async () => {
+        const u = getClientAuth().currentUser;
+        if (u) await sendEmailVerification(u, { url: `${window.location.origin}/` });
+      }),
+    [run],
+  );
+
+  const refreshUser = useCallback(async () => {
+    const u = getClientAuth().currentUser;
+    if (!u) return;
+    await u.reload();
+    // Force a fresh token so Firestore rules see email_verified = true.
+    await u.getIdToken(true);
+    setUser(getClientAuth().currentUser);
+    setStatus(isVerified(u) ? "signed_in" : "unverified");
+  }, []);
+
   const signOut = useCallback(async () => {
-    if (isDemo) return;
     await fbSignOut(getClientAuth());
   }, []);
 
-  const value = useMemo(() => ({ status, user, error, signIn, signOut }), [status, user, error, signIn, signOut]);
+  const value = useMemo(
+    () => ({
+      status,
+      user,
+      isAdmin,
+      error,
+      clearError: () => setError(null),
+      signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
+      resetPassword,
+      resendVerification,
+      refreshUser,
+      signOut,
+    }),
+    [status, user, isAdmin, error, signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, resendVerification, refreshUser, signOut],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
-}
-
-function friendlyAuthError(e: unknown): string {
-  const code = (e as { code?: string }).code ?? "";
-  if (code.includes("network")) return "Sin conexión. Conéctate para iniciar sesión por primera vez.";
-  if (code.includes("unauthorized-domain")) return "Este dominio no está autorizado en Firebase Auth (Ajustes → Dominios autorizados).";
-  return "No se pudo iniciar sesión. Intenta de nuevo.";
 }
 
 export function useAuth(): AuthCtx {

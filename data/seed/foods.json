@@ -1,0 +1,498 @@
+{
+ "version": "2026-10-18",
+ "note": "Proteína aproximada por porción (null = completar). Sin precios: cada usuario escribe los suyos.",
+ "countries": {
+  "CO": {
+   "currency": "COP",
+   "items": [
+    {
+     "id": "egg",
+     "name": "Huevo",
+     "portionLabel": "1 unidad",
+     "portionGrams": null,
+     "proteinG": 6,
+     "kcal": null,
+     "tags": [
+      "huevo"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "lentils",
+     "name": "Lentejas cocidas",
+     "portionLabel": "1 taza",
+     "portionGrams": null,
+     "proteinG": 18,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "beans",
+     "name": "Fríjoles cocidos",
+     "portionLabel": "1 taza",
+     "portionGrams": null,
+     "proteinG": 15,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "chickpeas",
+     "name": "Garbanzos cocidos",
+     "portionLabel": "1 taza",
+     "portionGrams": null,
+     "proteinG": 14,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "chicken_thigh",
+     "name": "Muslo/contramuslo de pollo",
+     "portionLabel": "100 g",
+     "portionGrams": 100,
+     "proteinG": 26,
+     "kcal": null,
+     "tags": [
+      "carne"
+     ],
+     "notes": "≈ 25-27 g por 100 g"
+    },
+    {
+     "id": "chicken_breast",
+     "name": "Pechuga de pollo",
+     "portionLabel": "100 g",
+     "portionGrams": 100,
+     "proteinG": 31,
+     "kcal": null,
+     "tags": [
+      "carne"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "chicken_liver",
+     "name": "Hígado y menudencias de pollo",
+     "portionLabel": "100 g",
+     "portionGrams": 100,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "carne"
+     ],
+     "notes": "Opción muy económica"
+    },
+    {
+     "id": "tuna",
+     "name": "Atún en lata",
+     "portionLabel": "1 lata",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "pescado"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "sardines",
+     "name": "Sardinas en lata",
+     "portionLabel": "1 lata",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "pescado"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "milk",
+     "name": "Leche",
+     "portionLabel": "1 vaso",
+     "portionGrams": null,
+     "proteinG": 8,
+     "kcal": null,
+     "tags": [
+      "lacteo"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "yogurt",
+     "name": "Yogur",
+     "portionLabel": "1 porción",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "lacteo"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "oats",
+     "name": "Avena",
+     "portionLabel": "1/2 taza",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano",
+      "gluten_posible"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "rice",
+     "name": "Arroz",
+     "portionLabel": "1 taza cocido",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "potato",
+     "name": "Papa",
+     "portionLabel": "1 mediana",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "bread",
+     "name": "Pan",
+     "portionLabel": "1 unidad",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "gluten"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "peanuts",
+     "name": "Maní",
+     "portionLabel": "30 g",
+     "portionGrams": 30,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "tvp",
+     "name": "Soya texturizada",
+     "portionLabel": "30 g seca",
+     "portionGrams": 30,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "tofu",
+     "name": "Tofu",
+     "portionLabel": "100 g",
+     "portionGrams": 100,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "cuajada",
+     "name": "Cuajada / queso campesino",
+     "portionLabel": "100 g",
+     "portionGrams": 100,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "lacteo"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "plantain",
+     "name": "Plátano",
+     "portionLabel": "1 unidad",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "yuca",
+     "name": "Yuca",
+     "portionLabel": "1 porción",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "arepa",
+     "name": "Arepa",
+     "portionLabel": "1 unidad",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    }
+   ]
+  },
+  "DEFAULT": {
+   "currency": null,
+   "items": [
+    {
+     "id": "egg",
+     "name": "Huevo",
+     "portionLabel": "1 unidad",
+     "portionGrams": null,
+     "proteinG": 6,
+     "kcal": null,
+     "tags": [
+      "huevo"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "lentils",
+     "name": "Lentejas cocidas",
+     "portionLabel": "1 taza",
+     "portionGrams": null,
+     "proteinG": 18,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "beans",
+     "name": "Fríjoles cocidos",
+     "portionLabel": "1 taza",
+     "portionGrams": null,
+     "proteinG": 15,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "chickpeas",
+     "name": "Garbanzos cocidos",
+     "portionLabel": "1 taza",
+     "portionGrams": null,
+     "proteinG": 14,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "chicken_thigh",
+     "name": "Muslo/contramuslo de pollo",
+     "portionLabel": "100 g",
+     "portionGrams": 100,
+     "proteinG": 26,
+     "kcal": null,
+     "tags": [
+      "carne"
+     ],
+     "notes": "≈ 25-27 g por 100 g"
+    },
+    {
+     "id": "chicken_breast",
+     "name": "Pechuga de pollo",
+     "portionLabel": "100 g",
+     "portionGrams": 100,
+     "proteinG": 31,
+     "kcal": null,
+     "tags": [
+      "carne"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "chicken_liver",
+     "name": "Hígado y menudencias de pollo",
+     "portionLabel": "100 g",
+     "portionGrams": 100,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "carne"
+     ],
+     "notes": "Opción muy económica"
+    },
+    {
+     "id": "tuna",
+     "name": "Atún en lata",
+     "portionLabel": "1 lata",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "pescado"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "sardines",
+     "name": "Sardinas en lata",
+     "portionLabel": "1 lata",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "pescado"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "milk",
+     "name": "Leche",
+     "portionLabel": "1 vaso",
+     "portionGrams": null,
+     "proteinG": 8,
+     "kcal": null,
+     "tags": [
+      "lacteo"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "yogurt",
+     "name": "Yogur",
+     "portionLabel": "1 porción",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "lacteo"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "oats",
+     "name": "Avena",
+     "portionLabel": "1/2 taza",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano",
+      "gluten_posible"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "rice",
+     "name": "Arroz",
+     "portionLabel": "1 taza cocido",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "potato",
+     "name": "Papa",
+     "portionLabel": "1 mediana",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "bread",
+     "name": "Pan",
+     "portionLabel": "1 unidad",
+     "portionGrams": null,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "gluten"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "peanuts",
+     "name": "Maní",
+     "portionLabel": "30 g",
+     "portionGrams": 30,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "tvp",
+     "name": "Soya texturizada",
+     "portionLabel": "30 g seca",
+     "portionGrams": 30,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    },
+    {
+     "id": "tofu",
+     "name": "Tofu",
+     "portionLabel": "100 g",
+     "portionGrams": 100,
+     "proteinG": null,
+     "kcal": null,
+     "tags": [
+      "vegano"
+     ],
+     "notes": ""
+    }
+   ]
+  }
+ }
+}

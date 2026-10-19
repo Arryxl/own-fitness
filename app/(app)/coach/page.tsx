@@ -1,24 +1,30 @@
 "use client";
 
 import { ShieldAlert } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Chat } from "@/components/coach/Chat";
 import { Memories, PendingMemories } from "@/components/coach/Memories";
 import { Proposals } from "@/components/coach/Proposals";
 import { Reports } from "@/components/coach/Reports";
 import { PageHeader, Segmented } from "@/components/ui";
-import { isDemo } from "@/lib/demo";
+import { useAiEnabled } from "@/lib/hooks/useAi";
 
 type Tab = "chat" | "reports" | "memory";
 
 export default function CoachPage() {
   const [tab, setTab] = useState<Tab>("chat");
+  const ai = useAiEnabled();
   return (
     <div className="animate-rise space-y-4">
       <PageHeader title="Coach IA" subtitle="Analiza tus datos reales; tú apruebas cualquier cambio" />
-      {isDemo && (
+      {!ai.enabled && (
         <p className="flex items-start gap-2 rounded-2xl bg-amber-soft px-4 py-3 text-sm text-amber">
-          <ShieldAlert className="mt-0.5 size-4 shrink-0" /> Modo demo: la IA necesita Firebase y la clave de Gemini en el servidor.
+          <ShieldAlert className="mt-0.5 size-4 shrink-0" /> El coach está desactivado.{" "}
+          <Link href="/ajustes#ia" className="font-semibold underline">
+            Actívalo en Ajustes
+          </Link>{" "}
+          si aceptas que tus métricas se envíen a Gemini.
         </p>
       )}
       <Proposals />

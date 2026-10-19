@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { useData } from "@/components/providers/DataProvider";
 import { Badge, Button, Field, IconButton, Input, PageHeader, Select, Sheet, TextArea, Toggle, parseNum } from "@/components/ui";
 import { ExercisePicker } from "@/components/workout/ExercisePicker";
-import { newId, putDoc } from "@/lib/db/write";
+import { putDoc, removeDoc } from "@/lib/db/write";
+import { createCustomExercise, saveOverride } from "@/lib/db/overrides";
 import { EQUIPMENT_LABEL, MUSCLE_LABEL } from "@/lib/format";
 import type { Equipment, Exercise, Muscle } from "@/lib/types";
 
@@ -28,7 +29,7 @@ export default function ExercisesPage() {
 
   function blank(): Exercise {
     return {
-      id: newId(data.uid, "exercises"),
+      id: "",
       name: "",
       family: "otro",
       primaryMuscle: "chest",
@@ -43,6 +44,7 @@ export default function ExercisesPage() {
       available: true,
       fallbackChain: [],
       custom: true,
+      overridden: true,
     };
   }
 
@@ -96,7 +98,36 @@ function ExerciseEditor({ initial, onClose }: { initial: Exercise; onClose: () =
   const [d, setD] = useState<Exercise>(initial);
   const [picking, setPicking] = useState(false);
   const set = (patch: Partial<Exercise>) => setD((x) => ({ ...x, ...patch }));
-  const isNew = !data.exerciseMap.has(initial.id);
+  const isNew = !initial.id;
+  const custom = d.custom;
+  const catalogEntry = data.catalog.exercises.find((c) => c.id === d.id);
+
+  function persist() {
+    const def = {
+      name: d.name.trim(),
+      family: d.family,
+      primaryMuscle: d.primaryMuscle,
+      secondaryMuscles: d.secondaryMuscles,
+      equipment: d.equipment,
+      spotterFree: d.spotterFree,
+      isCompound: d.isCompound,
+      weightIsPerHand: d.weightIsPerHand,
+      displayUnit: d.displayUnit,
+      cues: d.cues,
+      fallbackChain: d.fallbackChain,
+    };
+    if (isNew) return void createCustomExercise(data.uid, def);
+    if (custom) return void putDoc(data.uid, "exerciseOverrides", d.id, { id: d.id, userModified: true, custom: def, available: d.available, displayUnit: d.displayUnit, updatedAt: Date.now() });
+    // Catalog exercise: store only what differs from the catalog entry.
+    saveOverride(data.uid, d.id, {
+      available: d.available,
+      displayUnit: d.displayUnit,
+      fallbackChain: d.fallbackChain,
+      ...(d.name.trim() !== catalogEntry?.name ? { name: d.name.trim() } : {}),
+      ...(d.cues !== catalogEntry?.cues ? { cues: d.cues } : {}),
+      increment: d.increment ?? null,
+    });
+  }
 
   function moveLink(i: number, dir: -1 | 1) {
     const c = [...d.fallbackChain];
@@ -116,7 +147,7 @@ function ExerciseEditor({ initial, onClose }: { initial: Exercise; onClose: () =
           className="w-full"
           disabled={!d.name.trim()}
           onClick={() => {
-            putDoc(data.uid, "exercises", d.id, { ...d, name: d.name.trim() });
+            persist();
             onClose();
           }}
         >
@@ -125,11 +156,24 @@ function ExerciseEditor({ initial, onClose }: { initial: Exercise; onClose: () =
       }
     >
       <div className="space-y-4">
+        {!custom && d.overridden && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              removeDoc(data.uid, "exerciseOverrides", d.id);
+              onClose();
+            }}
+          >
+            Restaurar valores originales del catálogo
+          </Button>
+        )}
+        {!custom && <p className="text-xs text-muted">Ejercicio del catálogo: puedes cambiar nombre, unidad, disponibilidad, notas y alternativas. Músculos y equipo vienen del catálogo.</p>}
         <Field label="Nombre">{(id) => <Input id={id} value={d.name} onChange={(e) => set({ name: e.target.value })} />}</Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Músculo principal">
             {(id) => (
-              <Select id={id} value={d.primaryMuscle} onChange={(e) => set({ primaryMuscle: e.target.value as Muscle })}>
+              <Select id={id} disabled={!custom} value={d.primaryMuscle} onChange={(e) => set({ primaryMuscle: e.target.value as Muscle })}>
                 {MUSCLES.map((m) => (
                   <option key={m} value={m}>
                     {MUSCLE_LABEL[m]}
@@ -147,7 +191,7 @@ function ExerciseEditor({ initial, onClose }: { initial: Exercise; onClose: () =
             )}
           </Field>
         </div>
-        <fieldset>
+        <fieldset disabled={!custom} className="disabled:opacity-60">
           <legend className="text-sm font-semibold">Músculos secundarios</legend>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {MUSCLES.filter((m) => m !== d.primaryMuscle).map((m) => {
@@ -166,7 +210,7 @@ function ExerciseEditor({ initial, onClose }: { initial: Exercise; onClose: () =
             })}
           </div>
         </fieldset>
-        <fieldset>
+        <fieldset disabled={!custom} className="disabled:opacity-60">
           <legend className="text-sm font-semibold">Equipo</legend>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {EQUIPMENT.map((q) => {

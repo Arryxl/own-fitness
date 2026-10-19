@@ -5,10 +5,9 @@
 import { collection, deleteDoc, doc, setDoc, updateDoc, writeBatch, type DocumentData } from "firebase/firestore";
 import { emitToast } from "@/components/providers/ToastProvider";
 import { getDb } from "@/lib/firebase/client";
-import { demoId, demoPatch, demoPut, demoRemove, isDemo } from "@/lib/demo";
 
 export type UserCollection =
-  | "exercises"
+  | "exerciseOverrides"
   | "personalRecords"
   | "plans"
   | "workouts"
@@ -31,7 +30,6 @@ function report(e: unknown) {
 }
 
 export function newId(uid: string, col: UserCollection): string {
-  if (isDemo) return demoId();
   return doc(collection(getDb(), "users", uid, col)).id;
 }
 
@@ -43,31 +41,23 @@ function body(data: object): DocumentData {
 }
 
 export function putDoc(uid: string, col: UserCollection, id: string, data: object, merge = false): void {
-  if (isDemo) return demoPut(col, id, body(data), merge);
   setDoc(doc(getDb(), "users", uid, col, id), body(data), { merge }).catch(report);
 }
 
 export function patchDoc(uid: string, col: UserCollection, id: string, data: DocumentData): void {
-  if (isDemo) return demoPatch(col, id, data);
   updateDoc(doc(getDb(), "users", uid, col, id), data).catch(report);
 }
 
 export function removeDoc(uid: string, col: UserCollection, id: string): void {
-  if (isDemo) return demoRemove(col, id);
   deleteDoc(doc(getDb(), "users", uid, col, id)).catch(report);
 }
 
 export function patchProfile(uid: string, data: DocumentData): void {
-  if (isDemo) return demoPut(null, uid, data, true);
   setDoc(doc(getDb(), "users", uid), data, { merge: true }).catch(report);
 }
 
 /** Batched writes (max 500 ops per batch). Returns the commit promise for callers that want it. */
 export function batchPut(uid: string, items: { col: UserCollection | null; id?: string; data: DocumentData; merge?: boolean }[]): Promise<void> {
-  if (isDemo) {
-    for (const it of items) demoPut(it.col, it.id ?? uid, it.data, it.merge ?? false);
-    return Promise.resolve();
-  }
   const db = getDb();
   const chunks: (typeof items)[] = [];
   for (let i = 0; i < items.length; i += 450) chunks.push(items.slice(i, i + 450));
@@ -84,3 +74,8 @@ export function batchPut(uid: string, items: { col: UserCollection | null; id?: 
 }
 
 export { report as reportWriteError };
+
+/** Saves a whole plan, stamping updatedAt. */
+export function savePlan<T extends { id: string }>(uid: string, plan: T): void {
+  putDoc(uid, "plans", plan.id, { ...plan, updatedAt: Date.now() });
+}

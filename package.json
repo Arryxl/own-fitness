@@ -9,12 +9,14 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:rules": "npx firebase-tools emulators:exec --only firestore --project demo-ironlog \"vitest run --config vitest.rules.config.mts\"",
+    "test:rules": "node scripts/with-java.mjs npx firebase-tools emulators:exec --only firestore,auth --project demo-ironlog \"vitest run --config vitest.rules.config.mts\"",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
-    "rules:build": "node --env-file-if-exists=.env.local scripts/build-rules.mjs",
     "icons": "node scripts/gen-icons.mjs",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "seed": "node --env-file-if-exists=.env.local scripts/seed-catalog.mjs",
+    "prebuild": "vitest run lib/seed",
+    "emulators": "node scripts/with-java.mjs npx firebase-tools emulators:start --only firestore,auth --project demo-ironlog"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",

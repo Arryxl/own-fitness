@@ -5,7 +5,7 @@ import { ArrowRight, Ban, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { authedFetch, useAuth } from "@/components/providers/AuthProvider";
 import { Badge, Button, Sheet, Toggle } from "@/components/ui";
-import { isDemo } from "@/lib/demo";
+import { useAiEnabled } from "@/lib/hooks/useAi";
 import { REASON_LABEL } from "@/lib/format";
 import type { Exercise, SubstitutionReason } from "@/lib/types";
 
@@ -44,6 +44,7 @@ export function SubstituteSheet({
   const { user } = useAuth();
   const [reason, setReason] = useState<SubstitutionReason>("busy");
   const [markMissing, setMarkMissing] = useState(true);
+  const aiOn = useAiEnabled();
   const [ai, setAi] = useState<{ loading: boolean; result?: AiSubstitute; error?: string }>({ loading: false });
 
   const chain = useMemo(() => {
@@ -170,8 +171,8 @@ export function SubstituteSheet({
               </Button>
             </div>
           ) : (
-            <Button size="sm" variant="soft" className="mt-2" onClick={askAi} disabled={ai.loading || isDemo}>
-              <Sparkles className="size-4" /> {ai.loading ? "Pensando…" : isDemo ? "IA no disponible en demo" : "Pedir sugerencia a la IA"}
+            <Button size="sm" variant="soft" className="mt-2" onClick={askAi} disabled={ai.loading || !aiOn.enabled}>
+              <Sparkles className="size-4" /> {ai.loading ? "Pensando…" : !aiOn.enabled ? "Coach de IA desactivado" : "Pedir sugerencia a la IA"}
             </Button>
           )}
           {ai.error && <p className="mt-2 text-xs text-danger">{ai.error}</p>}

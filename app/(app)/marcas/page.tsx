@@ -1,13 +1,13 @@
 "use client";
 
-import { HelpCircle, Plus, Trophy } from "lucide-react";
+import { Plus, Trophy } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useData } from "@/components/providers/DataProvider";
 import { Badge, Button, Card, CardHeader, EmptyState, Field, Input, PageHeader, Select, Sheet, TextArea, Toggle, parseNum } from "@/components/ui";
 import { ExercisePicker } from "@/components/workout/ExercisePicker";
 import { exerciseHistory, exerciseTrend } from "@/lib/analytics/strength";
 import { formatWeight, fromKg, round, toKg } from "@/lib/analytics/units";
-import { patchDoc, putDoc } from "@/lib/db/write";
+import { putDoc } from "@/lib/db/write";
 import { fmtShortDate } from "@/lib/format";
 import type { Exercise, PersonalRecord, WeightUnit } from "@/lib/types";
 
@@ -18,7 +18,7 @@ export default function MarksPage() {
 
   const rows = useMemo(() => {
     const ids = new Set<string>([...data.records.keys()]);
-    for (const s of data.activePlan?.sessions ?? []) if (s.kind !== "home") for (const it of s.items) ids.add(it.exerciseId);
+    for (const s of data.activePlan?.sessions ?? []) if (s.kind === "lifting") for (const it of s.items) ids.add(it.exerciseId);
     return [...ids]
       .map((id) => data.exerciseMap.get(id))
       .filter((e): e is Exercise => !!e)
@@ -29,7 +29,6 @@ export default function MarksPage() {
       .sort((a, b) => Number(!!b.record) - Number(!!a.record) || a.ex.name.localeCompare(b.ex.name, "es"));
   }, [data.records, data.activePlan, data.exerciseMap, data.workouts]);
 
-  const unknown = data.exerciseMap.get("vertical_push_unknown");
 
   return (
     <div className="animate-rise space-y-4">
@@ -43,17 +42,6 @@ export default function MarksPage() {
         }
       />
 
-      {unknown && unknown.name.includes("por identificar") && (
-        <Card className="border-violet/30 bg-violet-soft/40">
-          <p className="flex items-start gap-2 text-sm">
-            <HelpCircle className="mt-0.5 size-5 shrink-0 text-violet" />
-            <span>
-              Tienes una marca de <b>~40 lb</b> en un ejercicio de «empuje hacia arriba» que aún no identificamos. Cuando sepas cuál es, renómbralo aquí.
-            </span>
-          </p>
-          <RenameInline exercise={unknown} />
-        </Card>
-      )}
 
       <Card>
         <CardHeader title="Ejercicios" subtitle="Inicial = lo que reportaste · Mejor e1RM = estimado de tus sesiones (Epley, heurística)" />
@@ -100,18 +88,6 @@ export default function MarksPage() {
   );
 }
 
-function RenameInline({ exercise }: { exercise: Exercise }) {
-  const data = useData();
-  const [name, setName] = useState("");
-  return (
-    <div className="mt-3 flex gap-2">
-      <Input aria-label="Nombre real del ejercicio" placeholder="Ej.: Press de hombros en máquina" value={name} onChange={(e) => setName(e.target.value)} />
-      <Button disabled={!name.trim()} onClick={() => patchDoc(data.uid, "exercises", exercise.id, { name: name.trim() })}>
-        Guardar
-      </Button>
-    </div>
-  );
-}
 
 function RecordEditor({ exercise, record, onClose }: { exercise: Exercise; record?: PersonalRecord; onClose: () => void }) {
   const data = useData();

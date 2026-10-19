@@ -1,46 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { SEED_EXERCISES } from "@/lib/data/exercises";
-import { SEED_PLANS } from "@/lib/data/plans";
+import raw from "@/data/seed/rutinas_seed.json";
+import { mergeExercises } from "@/lib/catalog";
+import { planFromTemplate } from "@/lib/plans";
+import { SeedSchema } from "@/lib/seed/schema";
 import { plannedSessionsForWeek, sessionForDate, summarizeAttendance, weeklyAttendance } from "../attendance";
-import { PRIORITY_MUSCLES, VOLUME_TARGET, planVolume, setsByMuscle, volumeStatus } from "../volume";
+import { planVolume, setsByMuscle, volumeStatus } from "../volume";
 import { entry, set, workout } from "./fixtures";
 
-const exercises = new Map(SEED_EXERCISES.map((e) => [e.id, e]));
-const [plan3, plan4] = SEED_PLANS;
+const seed = SeedSchema.parse(raw);
+const exercises = new Map(mergeExercises(seed.exercises, [], { units: "mixed", unavailableEquipment: [] }).map((e) => [e.id, e]));
+const tpl = (id: string) => seed.programTemplates.find((t) => t.id === id)!;
+const plan = (id: string, variant: string | null, startDate = "2026-01-05") => planFromTemplate(tpl(id), { id: "p", variant, startDate, now: 0 });
 
-describe("seed data integrity", () => {
-  it("every plan and fallback exercise exists", () => {
-    for (const p of SEED_PLANS)
-      for (const s of p.sessions) for (const i of s.items) expect(exercises.has(i.exerciseId), i.exerciseId).toBe(true);
-    for (const e of SEED_EXERCISES)
-      for (const l of e.fallbackChain) expect(exercises.has(l.exerciseId), `${e.id} → ${l.exerciseId}`).toBe(true);
-  });
-
-  it("every plan exercise has a fallback chain", () => {
-    for (const p of SEED_PLANS)
-      for (const s of p.sessions.filter((x) => x.kind !== "home"))
-        for (const i of s.items) expect(exercises.get(i.exerciseId)!.fallbackChain.length, i.exerciseId).toBeGreaterThan(0);
-  });
-
-  it("barbell bench is not spotter-free", () => {
-    expect(exercises.get("barbell_bench_press")!.spotterFree).toBe(false);
-  });
-
-  it("both plans keep priority muscles inside 12-20 weekly sets", () => {
-    for (const p of SEED_PLANS) {
-      const v = planVolume(p, exercises);
-      for (const m of PRIORITY_MUSCLES) {
-        expect(v[m], `${p.id}/${m}`).toBeGreaterThanOrEqual(VOLUME_TARGET.min);
-        expect(v[m], `${p.id}/${m}`).toBeLessThanOrEqual(VOLUME_TARGET.max);
+describe("planned volume matches the seed's weeklyVolume", () => {
+  for (const t of seed.programTemplates) {
+    it(t.id, () => {
+      const v = planVolume(plan(t.id, Object.keys(t.weekdayMap)[0] ?? null), exercises);
+      for (const [m, expected] of Object.entries(t.weeklyVolume.fractionalSets)) {
+        expect(v[m as keyof typeof v] ?? 0, `${t.id}/${m}`).toBeCloseTo(expected, 0);
       }
-    }
-  });
+    });
+  }
 });
 
 describe("volume", () => {
   it("counts hard sets with secondary muscles at half weight", () => {
     const w = workout("2026-10-12", [
-      entry("machine_chest_press", [set(10, 40), set(10, 40), set(10, 40, { isWarmup: true }), set(12, 40, { rir: 6 })]),
+      entry("chest_press_machine", [set(10, 40), set(10, 40), set(10, 40, { isWarmup: true }), set(12, 40, { rir: 6 })]),
     ]);
     const v = setsByMuscle([w], exercises);
     expect(v.chest).toBe(2);
@@ -48,8 +34,13 @@ describe("volume", () => {
   });
 
   it("attributes substitutions to the planned exercise's muscles", () => {
-    const w = workout("2026-10-12", [entry("push_up", [set(15, null)], { plannedExerciseId: "machine_chest_press" })]);
+    const w = workout("2026-10-12", [entry("pushup", [set(15, null)], { plannedExerciseId: "chest_press_machine" })]);
     expect(setsByMuscle([w], exercises).chest).toBe(1);
+  });
+
+  it("ignores cardio minutes", () => {
+    const w = workout("2026-10-12", [entry("incline_walk", [set(30, null)], { repUnit: "minutes" })]);
+    expect(setsByMuscle([w], exercises)).toEqual({});
   });
 
   it("classifies weekly volume", () => {
@@ -61,38 +52,49 @@ describe("volume", () => {
   });
 });
 
-describe("attendance", () => {
-  it("plans L-M-V and the floating day only when activated", () => {
-    expect(plannedSessionsForWeek(plan3, "2026-10-12", null).map((p) => p.date)).toEqual(["2026-10-12", "2026-10-14", "2026-10-16"]);
-    expect(plannedSessionsForWeek(plan4, "2026-10-12", null)).toHaveLength(3);
-    expect(plannedSessionsForWeek(plan4, "2026-10-12", 4).map((p) => p.date)).toContain("2026-10-15");
-    expect(sessionForDate(plan4, "2026-10-13", 2)?.kind).toBe("floating");
-    expect(sessionForDate(plan3, "2026-10-17", null)).toBeNull();
+describe("attendance and calendars", () => {
+  it("assigns weekdays from the chosen variant", () => {
+    const p = plan("H2", "extraTuesday");
+    expect(plannedSessionsForWeek(p, "2026-10-12").map((d) => d.date)).toEqual(["2026-10-12", "2026-10-13", "2026-10-14", "2026-10-16"]);
+    expect(sessionForDate(p, "2026-10-13")?.key).toBe("L1");
+  });
+
+  it("does not count optional/floating or cardio sessions as scheduled training", () => {
+    const p = plan("D1", "classic");
+    const keys = plannedSessionsForWeek(p, "2026-10-12").map((d) => d.session.key);
+    expect(keys).toEqual(["U1", "L1", "U2", "L2"]);
+    expect(sessionForDate(p, "2026-10-14")?.kind).toBe("cardio"); // C1 on Wednesday in the classic calendar
+  });
+
+  it("alternates StrongLifts A/B: A-B-A then B-A-B", () => {
+    const p = plan("F1", null, "2026-10-12");
+    const w1 = plannedSessionsForWeek(p, "2026-10-12").map((d) => d.session.key);
+    const w2 = plannedSessionsForWeek(p, "2026-10-19").map((d) => d.session.key);
+    expect(w1).toEqual(["A", "B", "A"]);
+    expect(w2).toEqual(["B", "A", "B"]);
+    expect(plannedSessionsForWeek(p, "2026-10-05")).toEqual([]); // before the start date
   });
 
   it("computes weekly attendance, compliance and streak", () => {
-    const ws = ["2026-09-28", "2026-10-05", "2026-10-12"];
+    const p = plan("H1", "default");
     const done = (d: string) => workout(d, []);
     const workouts = [
       ...["2026-09-28", "2026-09-30", "2026-10-02"].map(done),
       ...["2026-10-05", "2026-10-07", "2026-10-09"].map(done),
       ...["2026-10-12"].map(done),
-      workout("2026-10-13", [], { sessionKey: "home" }), // home session: not gym attendance
+      workout("2026-10-13", [], { sessionKind: "cardio" }), // cardio: not a training day
     ];
-    const weeks = weeklyAttendance({ plan: plan3, workouts, weekStarts: ws, floatingByWeek: new Map(), today: "2026-10-14" });
+    const weeks = weeklyAttendance({ plan: p, workouts, weekStarts: ["2026-09-28", "2026-10-05", "2026-10-12"], today: "2026-10-14" });
     expect(weeks.map((w) => w.attended)).toEqual([3, 3, 1]);
     expect(weeks[2].plannedToDate).toBe(2);
-    expect(weeks[2].closed).toBe(false);
     const s = summarizeAttendance(weeks);
     expect(s.streakWeeks).toBe(2);
-    expect(s.compliancePct).toBe(88); // 7 of 8 planned-to-date
+    expect(s.compliancePct).toBe(88);
   });
-});
 
-describe("attendance before the start date", () => {
-  it("does not count planned days before the user started", () => {
-    const weeks = weeklyAttendance({ plan: plan3, workouts: [], weekStarts: ["2026-10-05", "2026-10-12"], floatingByWeek: new Map(), today: "2026-10-18", startDate: "2026-10-14" });
+  it("ignores planned days before the user started", () => {
+    const weeks = weeklyAttendance({ plan: plan("H1", "default"), workouts: [], weekStarts: ["2026-10-05", "2026-10-12"], today: "2026-10-18", startDate: "2026-10-14" });
     expect(weeks[0].planned).toBe(0);
-    expect(weeks[1].planned).toBe(2); // Wed 14 and Fri 16
+    expect(weeks[1].planned).toBe(2);
   });
 });

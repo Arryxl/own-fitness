@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { authedFetch, useAuth } from "@/components/providers/AuthProvider";
 import { useData } from "@/components/providers/DataProvider";
 import { addDays, todayISO, weekStart } from "@/lib/analytics/dates";
-import { isDemo } from "@/lib/demo";
+import { useAiEnabled } from "@/lib/hooks/useAi";
 
 const KEY = "ironlog:auto-report:";
 
@@ -14,9 +14,10 @@ export function AutoWeeklyReport() {
   const { user } = useAuth();
   const data = useData();
   const tried = useRef(false);
+  const ai = useAiEnabled();
 
   useEffect(() => {
-    if (isDemo || tried.current || !user || !data.ready || !navigator.onLine) return;
+    if (!ai.enabled || tried.current || !user || !data.ready || !navigator.onLine) return;
     const lastMonday = addDays(weekStart(todayISO()), -7);
     const lastSunday = addDays(lastMonday, 6);
     const hasData = data.workouts.some((w) => w.status === "completed" && w.date >= lastMonday && w.date <= lastSunday);
@@ -30,7 +31,7 @@ export function AutoWeeklyReport() {
     }
     tried.current = true;
     authedFetch(user, "/api/ai/report", { method: "POST", body: JSON.stringify({ periodStart: lastMonday, auto: true }) }).catch(() => {});
-  }, [user, data.ready, data.workouts, data.reports]);
+  }, [user, data.ready, data.workouts, data.reports, ai.enabled]);
 
   return null;
 }

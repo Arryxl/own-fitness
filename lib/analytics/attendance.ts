@@ -1,5 +1,5 @@
 import type { Plan, PlanSession, Workout } from "@/lib/types";
-import { addDays, isoWeekKey, isoWeekday, weekStart } from "./dates";
+import { addDays, daysBetween, isoWeekKey, isoWeekday } from "./dates";
 import { round } from "./units";
 
 export interface PlannedDay {
@@ -7,21 +7,47 @@ export interface PlannedDay {
   session: PlanSession;
 }
 
-/** Sessions planned in the week starting `monday`. The floating session only counts if activated that week. */
-export function plannedSessionsForWeek(plan: Plan | null, monday: string, floatingWeekday: number | null): PlannedDay[] {
+/** Sessions that count as scheduled training (not optional, not floating, not cardio). */
+export function scheduledSessions(plan: Plan): PlanSession[] {
+  return plan.sessions.filter((s) => !s.optional && !s.floating && s.kind === "lifting");
+}
+
+/**
+ * For rotating plans (e.g. StrongLifts A/B), which session falls on `date`:
+ * count training days since the plan started and alternate.
+ */
+function rotatingSessionFor(plan: Plan, date: string): PlanSession | null {
+  if (!plan.scheduleDays.includes(isoWeekday(date)) || date < plan.startDate) return null;
+  const pool = scheduledSessions(plan);
+  if (pool.length === 0) return null;
+  let n = 0;
+  const total = daysBetween(plan.startDate, date);
+  for (let i = 0; i < total; i++) if (plan.scheduleDays.includes(isoWeekday(addDays(plan.startDate, i)))) n++;
+  return pool[n % pool.length];
+}
+
+/** Scheduled sessions in the week starting `monday`. */
+export function plannedSessionsForWeek(plan: Plan | null, monday: string): PlannedDay[] {
   if (!plan) return [];
   const out: PlannedDay[] = [];
-  for (const s of plan.sessions) {
-    if (s.kind === "gym" && s.weekday) out.push({ date: addDays(monday, s.weekday - 1), session: s });
-    if (s.kind === "floating" && floatingWeekday) out.push({ date: addDays(monday, floatingWeekday - 1), session: s });
+  if (plan.rotation === "alternate") {
+    for (let i = 0; i < 7; i++) {
+      const date = addDays(monday, i);
+      const s = rotatingSessionFor(plan, date);
+      if (s) out.push({ date, session: s });
+    }
+    return out;
   }
+  for (const s of scheduledSessions(plan)) if (s.weekday) out.push({ date: addDays(monday, s.weekday - 1), session: s });
   return out.sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
-/** The session planned for a given date, if any. */
-export function sessionForDate(plan: Plan | null, date: string, floatingWeekday: number | null): PlanSession | null {
-  const planned = plannedSessionsForWeek(plan, weekStart(date), floatingWeekday);
-  return planned.find((p) => p.date === date)?.session ?? null;
+/** Any session with a fixed day on `date` (lifting or cardio), or the rotating session. */
+export function sessionForDate(plan: Plan | null, date: string): PlanSession | null {
+  if (!plan) return null;
+  if (plan.rotation === "alternate") return rotatingSessionFor(plan, date);
+  const wd = isoWeekday(date);
+  return plan.sessions.find((s) => s.weekday === wd && !s.optional && s.kind === "lifting") ?? plan.sessions.find((s) => s.weekday === wd && !s.optional) ?? null;
 }
 
 export interface WeekAttendance {
@@ -37,45 +63,33 @@ export interface WeekAttendance {
   closed: boolean;
 }
 
-/** Gym attendance per week. Home sessions don't count as gym attendance. */
+/** Training attendance per week. Cardio-only sessions don't count as attended training days. */
 export function weeklyAttendance(args: {
   plan: Plan | null;
   workouts: Workout[];
   weekStarts: string[];
-  floatingByWeek: Map<string, number | null>;
   today: string;
   /** Planned days before this date (when the user started) are not counted as missed. */
   startDate?: string | null;
 }): WeekAttendance[] {
-  const { plan, workouts, weekStarts, floatingByWeek, today, startDate } = args;
-  const homeKeys = new Set(plan?.sessions.filter((s) => s.kind === "home").map((s) => s.key) ?? []);
+  const { plan, workouts, weekStarts, today, startDate } = args;
   return weekStarts.map((ws) => {
-    const key = isoWeekKey(ws);
-    const planned = plannedSessionsForWeek(plan, ws, floatingByWeek.get(key) ?? null).filter((p) => !startDate || p.date >= startDate);
+    const planned = plannedSessionsForWeek(plan, ws).filter((p) => !startDate || p.date >= startDate);
     const end = addDays(ws, 6);
     const dates = new Set(
-      workouts
-        .filter(
-          (w) =>
-            w.status === "completed" &&
-            w.date >= ws &&
-            w.date <= end &&
-            !(w.sessionKey && homeKeys.has(w.sessionKey)),
-        )
-        .map((w) => w.date),
+      workouts.filter((w) => w.status === "completed" && w.date >= ws && w.date <= end && w.sessionKind !== "cardio").map((w) => w.date),
     );
     const attendedDates = [...dates].sort();
-    const closed = end < today;
     return {
       weekStart: ws,
-      weekKey: key,
+      weekKey: isoWeekKey(ws),
       planned: planned.length,
       plannedToDate: planned.filter((p) => p.date <= today).length,
       attended: attendedDates.length,
       attendedDates,
       plannedDates: planned.map((p) => p.date),
       met: planned.length > 0 && attendedDates.length >= planned.length,
-      closed,
+      closed: end < today,
     };
   });
 }
@@ -95,6 +109,7 @@ export function summarizeAttendance(weeks: WeekAttendance[]): AttendanceSummary 
   let streak = 0;
   for (let i = weeks.length - 1; i >= 0; i--) {
     const w = weeks[i];
+    if (w.planned === 0 && w.closed) break;
     if (!w.closed) {
       if (w.met) streak++;
       continue; // an open week doesn't break the streak yet
@@ -111,6 +126,3 @@ export function summarizeAttendance(weeks: WeekAttendance[]): AttendanceSummary 
   };
 }
 
-export function isFloatingCandidate(plan: Plan | null, date: string): boolean {
-  return !!plan?.sessions.some((s) => s.kind === "floating") && (plan.floatingWeekdays ?? [2, 4]).includes(isoWeekday(date));
-}

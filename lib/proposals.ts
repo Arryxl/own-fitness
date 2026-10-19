@@ -22,7 +22,7 @@ export function applyProposal(plan: Plan, p: PlanChangeProposal): Plan | null {
     case "add_exercise": {
       const id = p.newExerciseId ?? p.exerciseId;
       if (!id) return null;
-      items.push({ exerciseId: id, sets: p.sets ?? 3, repMin: p.repMin ?? 8, repMax: p.repMax ?? 12, restSec: 90, rirTarget: 2, notes: "Añadido por propuesta del coach" });
+      items.push({ exerciseId: id, sets: p.sets ?? 3, repMin: p.repMin ?? 8, repMax: p.repMax ?? 12, restSec: 90, rirTarget: 2, supersetGroup: null, repUnit: "reps", notes: "Añadido por propuesta del coach" });
       break;
     }
     case "remove_exercise":
@@ -30,5 +30,5 @@ export function applyProposal(plan: Plan, p: PlanChangeProposal): Plan | null {
       items = items.filter((_, i) => i !== idx);
       break;
   }
-  return { ...plan, sessions: plan.sessions.map((s) => (s.key === session.key ? { ...s, items } : s)) };
+  return { ...plan, updatedAt: Date.now(), sessions: plan.sessions.map((s) => (s.key === session.key ? { ...s, items } : s)) };
 }

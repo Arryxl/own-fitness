@@ -7,7 +7,6 @@ import { useData } from "@/components/providers/DataProvider";
 import { useToast } from "@/components/providers/ToastProvider";
 import { Badge, Button, Card, CardHeader, EmptyState, IconButton, Select, TextArea } from "@/components/ui";
 import { removeDoc } from "@/lib/db/write";
-import { isDemo } from "@/lib/demo";
 import { getDb } from "@/lib/firebase/client";
 import { useAiPost } from "@/lib/hooks/useAi";
 import type { Memory, MemoryKind } from "@/lib/types";
@@ -23,7 +22,6 @@ export const KIND_LABEL: Record<MemoryKind, string> = {
 function useSavedMemories(uid: string) {
   const [list, setList] = useState<Memory[]>([]);
   useEffect(() => {
-    if (isDemo) return;
     const q = query(collection(getDb(), "users", uid, "memories"), orderBy("createdAt", "desc"), limit(100));
     return onSnapshot(q, (s) =>
       setList(

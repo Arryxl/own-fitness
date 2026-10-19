@@ -7,11 +7,12 @@ import { useToast } from "@/components/providers/ToastProvider";
 import { Button, Card, ProgressBar, Sheet, TextArea } from "@/components/ui";
 import { e1rm, exerciseHistory, workingSets } from "@/lib/analytics/strength";
 import { formatWeight, round } from "@/lib/analytics/units";
-import { newId, patchDoc, putDoc, removeDoc } from "@/lib/db/write";
+import { putDoc, removeDoc } from "@/lib/db/write";
 import { fmtDuration, fmtNum } from "@/lib/format";
 import { computeWeeklyStats } from "@/lib/stats";
 import type { Exercise, SubstitutionReason, WeightUnit, Workout, WorkoutEntry } from "@/lib/types";
-import { blankSet, planItemFor, suggestionFor, workoutProgress } from "@/lib/workout";
+import { DEFAULT_ITEM, blankSet, planItemFor, suggestionFor, workoutProgress } from "@/lib/workout";
+import { createCustomExercise, saveOverride } from "@/lib/db/overrides";
 import { ExerciseCard } from "./ExerciseCard";
 import { ExercisePicker } from "./ExercisePicker";
 import { RestTimer, type RestState } from "./RestTimer";
@@ -109,25 +110,27 @@ export function WorkoutLogger({ initial }: { initial: Workout }) {
 
   function substitute(i: number, target: Exercise, reason: SubstitutionReason) {
     const old = w.entries[i];
-    const item = planItemFor(data.activePlan, w.sessionKey, old.plannedExerciseId ?? old.exerciseId);
-    const s = suggestionFor(item ?? { sets: old.sets.length, repMin: 8, repMax: 12, rirTarget: 2 }, target, others, data.records.get(target.id));
+    const item = planItemFor(data.activePlan, w.sessionKey, old.plannedExerciseId ?? old.exerciseId, data.addOns);
+    const s = suggestionFor(item ?? { ...DEFAULT_ITEM, sets: old.sets.length, repUnit: old.repUnit ?? target.metric }, target, others, data.records.get(target.id));
     setEntry(i, {
       exerciseId: target.id,
       plannedExerciseId: old.plannedExerciseId ?? old.exerciseId,
       substitutionReason: reason,
       nameSnapshot: target.name,
+      repUnit: old.repUnit ?? target.metric,
       notes: old.notes,
       sets: old.sets.map((_, k) => blankSet(k, target, s.weightKg)),
     });
   }
 
   function addExercise(ex: Exercise) {
-    const s = suggestionFor({ sets: 3, repMin: 8, repMax: 12, rirTarget: 2 }, ex, others, data.records.get(ex.id));
+    const s = suggestionFor({ ...DEFAULT_ITEM, repUnit: ex.metric }, ex, others, data.records.get(ex.id));
     const entry: WorkoutEntry = {
       exerciseId: ex.id,
       plannedExerciseId: null,
       substitutionReason: null,
       nameSnapshot: ex.name,
+      repUnit: ex.metric,
       notes: "",
       sets: [0, 1, 2].map((k) => blankSet(k, ex, s.weightKg)),
     };
@@ -136,7 +139,7 @@ export function WorkoutLogger({ initial }: { initial: Workout }) {
   }
 
   function changeUnit(ex: Exercise, u: WeightUnit) {
-    patchDoc(data.uid, "exercises", ex.id, { displayUnit: u });
+    saveOverride(data.uid, ex.id, { displayUnit: u });
   }
 
   const progress = workoutProgress(w);
@@ -164,8 +167,8 @@ export function WorkoutLogger({ initial }: { initial: Workout }) {
       {w.entries.map((entry, i) => {
         const ex = data.exerciseMap.get(entry.exerciseId);
         if (!ex) return null;
-        const item = planItemFor(data.activePlan, w.sessionKey, entry.plannedExerciseId ?? entry.exerciseId);
-        const effItem = item ?? { sets: entry.sets.length, repMin: 8, repMax: 12, rirTarget: 2, restSec: data.profile?.restTimerDefaultSec ?? 90, exerciseId: ex.id, notes: "" };
+        const item = planItemFor(data.activePlan, w.sessionKey, entry.plannedExerciseId ?? entry.exerciseId, data.addOns);
+        const effItem = item ?? { ...DEFAULT_ITEM, sets: entry.sets.length, restSec: data.profile?.restTimerDefaultSec ?? 90, exerciseId: ex.id, repUnit: entry.repUnit ?? ex.metric };
         const history = exerciseHistory(others, ex.id);
         return (
           <ExerciseCard
@@ -225,24 +228,25 @@ export function WorkoutLogger({ initial }: { initial: Workout }) {
             notes: `${w.notes}${w.notes ? "\n" : ""}Omitido: ${e.nameSnapshot} (${reason === "pain" ? "dolor" : reason}).`,
           });
         }}
-        onMarkUnavailable={(ex) => patchDoc(data.uid, "exercises", ex.id, { available: false })}
+        onMarkUnavailable={(ex) => saveOverride(data.uid, ex.id, { available: false })}
         onCreateCustom={(s: AiSubstitute, reason) => {
           if (subFor === null) return;
           const base = data.exerciseMap.get(w.entries[subFor].exerciseId)!;
-          const id = newId(data.uid, "exercises");
-          const ex: Exercise = {
-            ...base,
-            id,
+          const def = {
             name: s.name,
-            cues: s.cues,
-            available: true,
-            spotterFree: true,
-            custom: true,
-            fallbackChain: [],
+            family: base.family,
+            primaryMuscle: base.primaryMuscle,
+            secondaryMuscles: base.secondaryMuscles,
             equipment: base.equipment,
+            spotterFree: true,
+            isCompound: base.isCompound,
+            weightIsPerHand: base.weightIsPerHand,
+            displayUnit: base.displayUnit,
+            cues: s.cues,
+            fallbackChain: [],
           };
-          putDoc(data.uid, "exercises", id, ex);
-          substitute(subFor, ex, reason);
+          const id = createCustomExercise(data.uid, def);
+          substitute(subFor, { ...base, ...def, id, available: true, custom: true, overridden: true }, reason);
         }}
       />
 

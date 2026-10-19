@@ -9,13 +9,15 @@ import { Badge, Button, Card, CardHeader, EmptyState, Field, IconButton, Input, 
 import { addDays } from "@/lib/analytics/dates";
 import { dailyMeans, movingAverage7d } from "@/lib/analytics/bodyweight";
 import { copPer25gProtein, nutritionSummary, proteinByDay, proteinRange, proteinTarget, sortByProteinCost } from "@/lib/analytics/nutrition";
+import { ageFromBirthDate, energyTargets } from "@/lib/analytics/energy";
+import { excludedFoodTags } from "@/lib/profile";
 import { round } from "@/lib/analytics/units";
 import type { MenuOut } from "@/lib/ai/schemas";
 import { newId, patchProfile, putDoc, removeDoc } from "@/lib/db/write";
-import { isDemo } from "@/lib/demo";
+
 import { getDb } from "@/lib/firebase/client";
 import { fmtCop, fmtNum } from "@/lib/format";
-import { useAiPost } from "@/lib/hooks/useAi";
+import { useAiEnabled, useAiPost } from "@/lib/hooks/useAi";
 import { useToday } from "@/lib/hooks/useToday";
 import type { Food, MealItem } from "@/lib/types";
 
@@ -37,6 +39,16 @@ export default function NutritionPage() {
     target,
   );
   const foods = useMemo(() => sortByProteinCost(data.foods), [data.foods]);
+  const currency = data.profile?.currency ?? "COP";
+  const excluded = excludedFoodTags(data.profile?.dietaryRestrictions ?? []);
+  const energy = energyTargets({
+    sex: data.profile?.sex ?? null,
+    ageYears: ageFromBirthDate(data.profile?.birthDate ?? null, today),
+    heightCm: data.profile?.heightCm ?? null,
+    weightKg: weight,
+    trainingDaysPerWeek: data.profile?.trainingDays.length ?? 3,
+    goal: data.profile?.goal ?? null,
+  });
 
   return (
     <div className="animate-rise space-y-4">
@@ -78,10 +90,25 @@ export default function NutritionPage() {
           </div>
         </Card>
         <Card>
-          <CardHeader title="Creatina" />
-          <p className="text-sm text-muted">
-            Monohidrato 3-5 g/día es el suplemento mejor respaldado y barato (ISSN). Opcional. Si tienes enfermedad renal, consulta a tu médico antes.
-          </p>
+          <CardHeader title="Energía estimada" subtitle="Rangos, no cifras exactas (Mifflin-St Jeor)" />
+          {energy ? (
+            <div className="space-y-1.5 text-sm">
+              <p>
+                Calorías: <b className="num">{fmtNum(energy.calories.min, 0)}-{fmtNum(energy.calories.max, 0)} kcal/día</b>
+              </p>
+              <p className="text-muted">
+                Mantenimiento ≈ {fmtNum(energy.maintenance.min, 0)}-{fmtNum(energy.maintenance.max, 0)} kcal · Grasas {energy.fatG.min}-{energy.fatG.max} g · Carbohidratos {energy.carbsG.min}-{energy.carbsG.max} g
+              </p>
+              {energy.warnings.map((w) => (
+                <p key={w} className="rounded-2xl bg-amber-soft px-3 py-2 text-xs text-amber">
+                  {w}
+                </p>
+              ))}
+              <p className="text-xs text-muted">Creatina monohidrato 3-5 g/día: el suplemento mejor respaldado y barato (opcional; si tienes enfermedad renal, consulta a tu médico).</p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted">Completa edad, estatura y peso en tu perfil para estimar tus calorías.</p>
+          )}
         </Card>
       </div>
 
@@ -121,7 +148,7 @@ export default function NutritionPage() {
       <Card>
         <CardHeader
           title="Catálogo de proteína barata"
-          subtitle="Escribe lo que pagas en COP; se ordena por costo de 25 g de proteína"
+          subtitle={`Escribe lo que pagas en ${currency}; se ordena por costo de 25 g de proteína`}
           action={
             <Button
               size="sm"
@@ -140,15 +167,18 @@ export default function NutritionPage() {
                 <button type="button" onClick={() => setEditingFood(f)} className="flex min-h-14 w-full items-center gap-3 py-2 text-left">
                   <span className="w-6 text-center text-xs font-bold text-muted">{cost != null ? i + 1 : "·"}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">{f.name}</span>
+                    <span className="block font-semibold">
+                      {f.name}
+                      {(f.tags ?? []).some((t) => excluded.has(t)) && <span className="ml-2 text-xs font-medium text-amber">no compatible con tus restricciones</span>}
+                    </span>
                     <span className="block text-xs text-muted">
                       {f.portionLabel} · {f.proteinG != null ? `${fmtNum(f.proteinG)} g proteína` : "proteína por completar"}
-                      {f.priceCop ? ` · ${fmtCop(f.priceCop)} / ${f.priceQty ?? 1} porc.` : ""}
+                      {f.priceCop ? ` · ${fmtCop(f.priceCop, currency)} / ${f.priceQty ?? 1} porc.` : ""}
                     </span>
                   </span>
                   {cost != null ? (
                     <span className="text-right">
-                      <span className="num block font-bold">{fmtCop(cost)}</span>
+                      <span className="num block font-bold">{fmtCop(cost, currency)}</span>
                       <span className="block text-[0.7rem] text-muted">por 25 g</span>
                     </span>
                   ) : (
@@ -198,9 +228,10 @@ function TargetEditor({ current, suggested }: { current: number | null; suggeste
 function AddMealSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const data = useData();
   const post = useAiPost();
+  const aiOn = useAiEnabled();
   const toast = useToast();
   const { today } = useToday();
-  const [mode, setMode] = useState<"ai" | "catalog" | "manual">(isDemo ? "catalog" : "ai");
+  const [mode, setMode] = useState<"ai" | "catalog" | "manual">(aiOn.enabled ? "ai" : "catalog");
   const [text, setText] = useState("");
   const [protein, setProtein] = useState("");
   const [estimate, setEstimate] = useState<MealEstimate | null>(null);
@@ -383,7 +414,9 @@ function FoodEditor({ food, onClose }: { food: Food; onClose: () => void }) {
             <Button
               variant="danger"
               onClick={() => {
-                removeDoc(data.uid, "foods", food.id);
+                // Catalog foods are hidden for this user; custom foods are deleted.
+                if (data.catalog.foods.some((c) => c.id === food.id)) putDoc(data.uid, "foods", food.id, { ...food, hidden: true });
+                else removeDoc(data.uid, "foods", food.id);
                 onClose();
               }}
             >
@@ -416,12 +449,12 @@ function FoodEditor({ food, onClose }: { food: Food; onClose: () => void }) {
         <div className="grid grid-cols-2 gap-3">
           <Field label="Porción">{(id) => <Input id={id} value={d.portionLabel} onChange={(e) => setD({ ...d, portionLabel: e.target.value })} />}</Field>
           <Field label="Proteína por porción (g)">{(id) => <Input id={id} inputMode="decimal" value={d.proteinG} onChange={(e) => setD({ ...d, proteinG: e.target.value })} />}</Field>
-          <Field label="Precio pagado (COP)">{(id) => <Input id={id} inputMode="numeric" placeholder="Ej.: 18000" value={d.priceCop} onChange={(e) => setD({ ...d, priceCop: e.target.value })} />}</Field>
+          <Field label={`Precio pagado (${data.profile?.currency ?? "COP"})`}>{(id) => <Input id={id} inputMode="numeric" placeholder="Ej.: 18000" value={d.priceCop} onChange={(e) => setD({ ...d, priceCop: e.target.value })} />}</Field>
           <Field label="¿Cuántas porciones trae?">{(id) => <Input id={id} inputMode="decimal" placeholder="Ej.: 30 huevos" value={d.priceQty} onChange={(e) => setD({ ...d, priceQty: e.target.value })} />}</Field>
         </div>
         <Field label="Nota (dónde lo compraste, presentación)">{(id) => <Input id={id} value={d.priceNote} onChange={(e) => setD({ ...d, priceNote: e.target.value })} />}</Field>
         <p className="rounded-2xl bg-sunken px-3 py-2 text-sm">
-          COP por 25 g de proteína: <b className="num">{preview != null ? fmtCop(preview) : "—"}</b>
+          Costo por 25 g de proteína: <b className="num">{preview != null ? fmtCop(preview, data.profile?.currency) : "—"}</b>
         </p>
       </div>
     </Sheet>
@@ -431,7 +464,6 @@ function FoodEditor({ food, onClose }: { food: Food; onClose: () => void }) {
 function useLatestMenu(uid: string) {
   const [menu, setMenu] = useState<(MenuOut & { createdAt: number; periodDays: number }) | null>(null);
   useEffect(() => {
-    if (isDemo) return;
     const q = query(collection(getDb(), "users", uid, "aiMenus"), orderBy("createdAt", "desc"), limit(1));
     return onSnapshot(q, (s) => setMenu((s.docs[0]?.data() as MenuOut & { createdAt: number; periodDays: number }) ?? null));
   }, [uid]);
@@ -441,18 +473,22 @@ function useLatestMenu(uid: string) {
 function MenuCard() {
   const data = useData();
   const post = useAiPost();
+  const aiOn = useAiEnabled();
   const toast = useToast();
-  const menu = useLatestMenu(data.uid);
+  const saved = useLatestMenu(data.uid);
   const [budget, setBudget] = useState(data.profile?.weeklyBudget ? String(data.profile.weeklyBudget) : "");
   const [loading, setLoading] = useState<1 | 7 | null>(null);
   const [showList, setShowList] = useState(false);
+  const [draft, setDraft] = useState<(MenuOut & { periodDays: number }) | null>(null);
+  const currency = data.profile?.currency ?? "COP";
+  const shown = draft ?? saved;
 
   async function generate(days: 1 | 7) {
     const b = parseNum(budget);
     if (b && b !== data.profile?.weeklyBudget) patchProfile(data.uid, { weeklyBudget: Math.round(b) });
     setLoading(days);
     try {
-      await post("/api/ai/menu", { days, budgetCop: b ? Math.round(b) : undefined });
+      setDraft(await post<MenuOut & { periodDays: number }>("/api/ai/menu", { days, budgetCop: b ? Math.round(b) : undefined }));
     } catch (e) {
       toast((e as Error).message, "error");
     } finally {
@@ -464,7 +500,7 @@ function MenuCard() {
     <Card>
       <CardHeader title="Menú y lista de compras" subtitle="La IA arma un menú con tus precios y tu presupuesto" />
       <div className="flex gap-2">
-        <Input aria-label="Presupuesto semanal en COP" inputMode="numeric" placeholder="Presupuesto semanal (COP)" value={budget} onChange={(e) => setBudget(e.target.value)} className="num" />
+        <Input aria-label="Presupuesto semanal" inputMode="numeric" placeholder={`Presupuesto semanal (${currency})`} value={budget} onChange={(e) => setBudget(e.target.value)} className="num" />
       </div>
       <div className="mt-2 flex gap-2">
         <Button variant="soft" className="flex-1" disabled={!!loading} onClick={() => generate(1)}>
@@ -474,15 +510,33 @@ function MenuCard() {
           {loading === 7 ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />} Semana
         </Button>
       </div>
-      {menu ? (
+      {draft && (
+        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-violet-soft p-3 text-sm">
+          <span className="flex-1 font-semibold text-violet">Propuesta de la IA: revísala antes de guardarla.</span>
+          <Button
+            size="sm"
+            onClick={() => {
+              putDoc(data.uid, "aiMenus", newId(data.uid, "aiMenus"), { ...draft, createdAt: Date.now() });
+              setDraft(null);
+              toast("Menú guardado", "success");
+            }}
+          >
+            Guardar menú
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>
+            Descartar
+          </Button>
+        </div>
+      )}
+      {shown ? (
         <div className="mt-4 space-y-3 text-sm">
           <div className="flex flex-wrap items-center gap-2">
-            {menu.withinBudget != null && <Badge tone={menu.withinBudget ? "primary" : "danger"}>{menu.withinBudget ? "Dentro del presupuesto" : "Se pasa del presupuesto"}</Badge>}
-            {menu.totalCostCop != null && <span className="num font-semibold">Total {fmtCop(menu.totalCostCop)}</span>}
+            {shown.withinBudget != null && <Badge tone={shown.withinBudget ? "primary" : "danger"}>{shown.withinBudget ? "Dentro del presupuesto" : "Se pasa del presupuesto"}</Badge>}
+            {shown.totalCostCop != null && <span className="num font-semibold">Total {fmtCop(shown.totalCostCop, currency)}</span>}
           </div>
-          {menu.shortfall && <p className="rounded-2xl bg-amber-soft px-3 py-2 text-amber">{menu.shortfall}</p>}
+          {shown.shortfall && <p className="rounded-2xl bg-amber-soft px-3 py-2 text-amber">{shown.shortfall}</p>}
           <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
-            {menu.days.map((d) => (
+            {shown.days.map((d) => (
               <div key={d.day} className="rounded-2xl bg-sunken p-3">
                 <p className="flex justify-between font-semibold">
                   {d.day} <span className="num text-muted">{fmtNum(d.proteinG, 0)} g</span>
@@ -500,27 +554,27 @@ function MenuCard() {
           <Button size="sm" variant="outline" onClick={() => setShowList(true)}>
             <ShoppingCart className="size-4" /> Lista de compras
           </Button>
-          {menu.tips.length > 0 && (
+          {shown.tips.length > 0 && (
             <ul className="list-disc space-y-1 pl-5 text-xs text-muted">
-              {menu.tips.map((t, i) => (
+              {shown.tips.map((t, i) => (
                 <li key={i}>{t}</li>
               ))}
             </ul>
           )}
           <Sheet open={showList} onClose={() => setShowList(false)} title="Lista de compras">
             <ul className="divide-y divide-line text-sm">
-              {menu.shoppingList.map((s, i) => (
+              {shown.shoppingList.map((s, i) => (
                 <li key={i} className="flex min-h-12 items-center gap-2">
                   <span className="min-w-0 flex-1">{s.food}</span>
                   <span className="text-muted">{s.qty}</span>
-                  <span className="num w-24 text-right font-semibold">{s.costCop != null ? fmtCop(s.costCop) : "—"}</span>
+                  <span className="num w-24 text-right font-semibold">{s.costCop != null ? fmtCop(s.costCop, currency) : "—"}</span>
                 </li>
               ))}
             </ul>
           </Sheet>
         </div>
       ) : (
-        <p className="mt-4 text-sm text-muted">{isDemo ? "La IA no está disponible en modo demo." : "Registra precios en el catálogo para que el menú sea exacto. Sin precios, la IA no inventa costos."}</p>
+        <p className="mt-4 text-sm text-muted">{!aiOn.enabled ? (aiOn.reason ?? "") : "Registra precios en el catálogo para que el menú sea exacto. Sin precios, la IA no inventa costos."}</p>
       )}
     </Card>
   );

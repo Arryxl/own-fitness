@@ -1,5 +1,5 @@
 import { parseISODate } from "@/lib/analytics/dates";
-import type { Muscle, SubstitutionReason, Verdict } from "@/lib/types";
+import type { Equipment, Goal, Level, Muscle, SubstitutionReason, Verdict } from "@/lib/types";
 
 const LOCALE = "es-CO";
 
@@ -16,9 +16,13 @@ export function fmtNum(n: number | null | undefined, decimals = 1): string {
   return n.toLocaleString(LOCALE, { maximumFractionDigits: decimals, minimumFractionDigits: 0 });
 }
 
-export function fmtCop(n: number | null | undefined): string {
+export function fmtCop(n: number | null | undefined, currency = "COP"): string {
   if (n == null) return "—";
-  return n.toLocaleString(LOCALE, { style: "currency", currency: "COP", maximumFractionDigits: 0 });
+  try {
+    return n.toLocaleString(LOCALE, { style: "currency", currency, maximumFractionDigits: currency === "COP" || currency === "CLP" ? 0 : 2 });
+  } catch {
+    return `${n.toLocaleString(LOCALE)} ${currency}`;
+  }
 }
 
 export function fmtDuration(ms: number): string {
@@ -32,16 +36,30 @@ export const WEEKDAY_LONG = ["lunes", "martes", "miércoles", "jueves", "viernes
 export const MUSCLE_LABEL: Record<Muscle, string> = {
   chest: "Pecho",
   back: "Espalda",
-  shoulders: "Hombros",
-  rear_delts: "Deltoide post.",
-  triceps: "Tríceps",
+  side_delts: "Hombro lateral",
+  rear_delts: "Hombro posterior",
+  front_delts: "Hombro frontal",
+  traps: "Trapecio",
   biceps: "Bíceps",
+  triceps: "Tríceps",
   quads: "Cuádriceps",
   hamstrings: "Isquios",
   glutes: "Glúteos",
-  abs: "Abdomen",
-  traps: "Trapecio",
   calves: "Pantorrillas",
+  abs: "Abdomen",
+  cardio: "Cardio",
+};
+
+export const GOAL_LABEL: Record<Goal, string> = {
+  hipertrofia: "Crecer",
+  fuerza: "Fuerza",
+  definicion: "Definir",
+};
+
+export const LEVEL_LABEL: Record<Level, string> = {
+  principiante: "Principiante",
+  intermedio: "Intermedio",
+  avanzado: "Avanzado",
 };
 
 export const REASON_LABEL: Record<SubstitutionReason, string> = {
@@ -60,17 +78,14 @@ export const VERDICT_LABEL: Record<Verdict, { text: string; tone: "primary" | "a
   insufficient_data: { text: "Faltan datos", tone: "neutral" },
 };
 
-export const EQUIPMENT_LABEL: Record<string, string> = {
-  machine: "Máquina",
+export const EQUIPMENT_LABEL: Record<Equipment, string> = {
+  machine: "Máquinas",
   dumbbell: "Mancuernas",
-  barbell: "Barra",
-  ez_bar: "Barra Z",
+  barbell: "Barra libre",
+  rack: "Rack con seguros",
   smith: "Smith",
-  cable: "Polea",
+  cable: "Poleas",
   bodyweight: "Peso corporal",
   bench: "Banco",
-  band: "Banda",
-  pullup_assist: "Asistida",
-  dip_station: "Paralelas",
-  captains_chair: "Silla romana",
+  band: "Bandas",
 };
