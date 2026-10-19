@@ -4,12 +4,13 @@ import { Dumbbell, Footprints, Play, Plus } from "lucide-react";
 import { useData } from "@/components/providers/DataProvider";
 import { Badge, Button, Card, EmptyState, LinkButton, PageHeader } from "@/components/ui";
 import { WorkoutLogger } from "@/components/workout/WorkoutLogger";
-import { sessionForDate } from "@/lib/analytics/attendance";
+import { extrasForDate, sessionForDate } from "@/lib/analytics/attendance";
 import { newId, putDoc } from "@/lib/db/write";
 import { WEEKDAY_LONG } from "@/lib/format";
 import { useToday } from "@/lib/hooks/useToday";
 import type { PlanSession } from "@/lib/types";
 import { buildWorkout, estimateMinutes } from "@/lib/workout";
+import { PLACE_LABEL, placeOf } from "@/lib/week";
 
 export default function TrainPage() {
   const data = useData();
@@ -20,6 +21,7 @@ export default function TrainPage() {
   if (active) return <WorkoutLogger key={active.id} initial={active} />;
 
   const todays = sessionForDate(plan, today);
+  const todaysExtras = extrasForDate(plan, today).map((s) => s.key);
 
   function start(session: PlanSession | null) {
     const id = newId(data.uid, "workouts");
@@ -49,7 +51,7 @@ export default function TrainPage() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {plan.sessions.map((s) => {
-            const isToday = todays?.key === s.key;
+            const isToday = todays?.key === s.key || todaysExtras.includes(s.key);
             return (
               <Card key={s.key} className={isToday ? "ring-2 ring-primary" : ""}>
                 <div className="flex items-start justify-between gap-2">
@@ -58,8 +60,9 @@ export default function TrainPage() {
                       {isToday && <Badge tone="primary">Hoy</Badge>}
                       {s.kind === "cardio" && <Badge tone="violet">Cardio</Badge>}
                       {(s.optional || s.floating) && <Badge tone="amber">Opcional</Badge>}
+                      {s.extra && <Badge tone="violet">Extra · {PLACE_LABEL[placeOf(s)]}</Badge>}
                       {s.weekday && <Badge tone="neutral">{WEEKDAY_LONG[s.weekday - 1]}</Badge>}
-                      {plan.rotation === "alternate" && <Badge tone="neutral">Rotación A/B</Badge>}
+                      {plan.rotation === "alternate" && !s.extra && <Badge tone="neutral">Rotación A/B</Badge>}
                     </div>
                     <h2 className="mt-2 text-lg font-bold">
                       {s.key} · {s.name}

@@ -30,18 +30,55 @@ function useMessages(uid: string, chatId: string) {
   return msgs;
 }
 
-export function Chat({ onProposal }: { onProposal: () => void }) {
+/** What the screen around the chat tells the coach (sent with each message, never stored). */
+export interface ChatContext {
+  screen: "semana";
+  /** ISO weekday the user is looking at. */
+  focusDay?: number | null;
+}
+
+export function Chat({
+  onProposal,
+  chatId = "main",
+  context,
+  draft,
+  suggestions = SUGGESTIONS,
+  embedded = false,
+}: {
+  onProposal: () => void;
+  chatId?: string;
+  context?: ChatContext;
+  /** Text to put in the input box; a new `n` replaces what's there. */
+  draft?: { text: string; n: number };
+  suggestions?: string[];
+  /** Inside another page: the list scrolls in its own box instead of moving the page. */
+  embedded?: boolean;
+}) {
   const { user } = useAuth();
   const data = useData();
   const online = useOnline();
-  const messages = useMessages(data.uid, "main");
+  const messages = useMessages(data.uid, chatId);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState<{ question: string; text: string; tools: string[]; error?: string; done?: boolean; lastId: string | null } | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [draftN, setDraftN] = useState(draft?.n ?? 0);
+  if (draft && draft.n !== draftN) {
+    setDraftN(draft.n);
+    setInput(draft.text);
+  }
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length, pending?.text]);
+    if (draft?.n) inputRef.current?.focus();
+  }, [draft?.n]);
+
+  useEffect(() => {
+    if (embedded) {
+      const el = listRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    } else endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length, pending?.text, embedded]);
 
   async function send(text: string) {
     const q = text.trim();
@@ -49,7 +86,7 @@ export function Chat({ onProposal }: { onProposal: () => void }) {
     setInput("");
     setPending({ question: q, text: "", tools: [], lastId: messages.at(-1)?.id ?? null });
     try {
-      const res = await authedFetch(user, "/api/ai/chat", { method: "POST", body: JSON.stringify({ message: q, chatId: "main", today: todayISO() }) });
+      const res = await authedFetch(user, "/api/ai/chat", { method: "POST", body: JSON.stringify({ message: q, chatId, today: todayISO(), ...context }) });
       if (!res.ok || !res.body) {
         const body = await res.json().catch(() => ({}));
         throw new Error((body as { error?: string }).error ?? "No se pudo contactar al coach.");
@@ -85,8 +122,8 @@ export function Chat({ onProposal }: { onProposal: () => void }) {
   const disabled = !ai.enabled || !online;
 
   return (
-    <div className="flex min-h-[60dvh] flex-col">
-      <div className="flex-1 space-y-3" aria-live="polite">
+    <div className={clsx("flex flex-col", !embedded && "min-h-[60dvh]")}>
+      <div ref={listRef} className={clsx("flex-1 space-y-3", embedded && "max-h-[28rem] overflow-y-auto overscroll-contain pr-1")} aria-live="polite">
         {messages.length === 0 && !visiblePending && (
           <div className="glass rounded-[var(--radius-card)] p-5 text-center">
             <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary-soft text-primary">
@@ -135,10 +172,10 @@ export function Chat({ onProposal }: { onProposal: () => void }) {
         <div ref={endRef} />
       </div>
 
-      <div className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] mt-4 lg:bottom-4">
-        {messages.length === 0 && !visiblePending && (
+      <div className={clsx("mt-4", !embedded && "sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] lg:bottom-4")}>
+        {(messages.length === 0 || embedded) && !visiblePending && !input && (
           <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
-            {SUGGESTIONS.map((s) => (
+            {suggestions.map((s) => (
               <button key={s} type="button" disabled={disabled} onClick={() => send(s)} className="glass min-h-10 shrink-0 rounded-full px-4 text-sm font-semibold disabled:opacity-50">
                 {s}
               </button>
@@ -156,6 +193,7 @@ export function Chat({ onProposal }: { onProposal: () => void }) {
             Mensaje para el coach
           </label>
           <textarea
+            ref={inputRef}
             id="coach-input"
             rows={1}
             value={input}

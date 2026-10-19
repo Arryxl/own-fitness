@@ -1,7 +1,7 @@
 import "server-only";
 import { ageFromBirthDate } from "@/lib/analytics/energy";
 import type { UserData } from "@/lib/server/userData";
-import { buildCoachSystemPrompt } from "./coach.v2";
+import { buildCoachSystemPrompt } from "./coach.v3";
 
 /** System prompt built from the verified user's profile (no name, email or birth date). */
 export async function coachPromptFor(data: UserData): Promise<string> {

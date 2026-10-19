@@ -7,16 +7,16 @@ export interface PlannedDay {
   session: PlanSession;
 }
 
-/** Sessions that count as scheduled training (not optional, not floating, not cardio). */
+/** Sessions that count as scheduled training (not optional, not floating, not cardio, not extra blocks). */
 export function scheduledSessions(plan: Plan): PlanSession[] {
-  return plan.sessions.filter((s) => !s.optional && !s.floating && s.kind === "lifting");
+  return plan.sessions.filter((s) => !s.optional && !s.floating && !s.extra && s.kind === "lifting");
 }
 
 /**
  * For rotating plans (e.g. StrongLifts A/B), which session falls on `date`:
  * count training days since the plan started and alternate.
  */
-function rotatingSessionFor(plan: Plan, date: string): PlanSession | null {
+export function rotatingSessionFor(plan: Plan, date: string): PlanSession | null {
   if (!plan.scheduleDays.includes(isoWeekday(date)) || date < plan.startDate) return null;
   const pool = scheduledSessions(plan);
   if (pool.length === 0) return null;
@@ -42,12 +42,19 @@ export function plannedSessionsForWeek(plan: Plan | null, monday: string): Plann
   return out.sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
-/** Any session with a fixed day on `date` (lifting or cardio), or the rotating session. */
+/** Any plan session with a fixed day on `date` (lifting or cardio), or the rotating session. Extra blocks are separate. */
 export function sessionForDate(plan: Plan | null, date: string): PlanSession | null {
   if (!plan) return null;
   if (plan.rotation === "alternate") return rotatingSessionFor(plan, date);
   const wd = isoWeekday(date);
-  return plan.sessions.find((s) => s.weekday === wd && !s.optional && s.kind === "lifting") ?? plan.sessions.find((s) => s.weekday === wd && !s.optional) ?? null;
+  const onDay = plan.sessions.filter((s) => s.weekday === wd && !s.optional && !s.extra);
+  return onDay.find((s) => s.kind === "lifting") ?? onDay[0] ?? null;
+}
+
+/** Extra blocks the user added to the weekday of `date`. */
+export function extrasForDate(plan: Plan | null, date: string): PlanSession[] {
+  const wd = isoWeekday(date);
+  return plan?.sessions.filter((s) => s.extra && s.weekday === wd) ?? [];
 }
 
 export interface WeekAttendance {
@@ -63,7 +70,7 @@ export interface WeekAttendance {
   closed: boolean;
 }
 
-/** Training attendance per week. Cardio-only sessions don't count as attended training days. */
+/** Training attendance per week. Cardio-only sessions and extra blocks don't count as attended training days. */
 export function weeklyAttendance(args: {
   plan: Plan | null;
   workouts: Workout[];
@@ -77,7 +84,7 @@ export function weeklyAttendance(args: {
     const planned = plannedSessionsForWeek(plan, ws).filter((p) => !startDate || p.date >= startDate);
     const end = addDays(ws, 6);
     const dates = new Set(
-      workouts.filter((w) => w.status === "completed" && w.date >= ws && w.date <= end && w.sessionKind !== "cardio").map((w) => w.date),
+      workouts.filter((w) => w.status === "completed" && w.date >= ws && w.date <= end && w.sessionKind !== "cardio" && !w.extra).map((w) => w.date),
     );
     const attendedDates = [...dates].sort();
     return {

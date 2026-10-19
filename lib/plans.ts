@@ -35,6 +35,7 @@ export function planFromTemplate(t: ProgramTemplate, opts: { id: string; variant
     notes: s.notes,
     estimatedMinutes: s.estimatedMinutes,
     items: s.items.map((i) => ({ ...i })),
+    place: (t.place ?? "gym") === "gym" ? "gym" : "home",
   }));
   return {
     id: opts.id,

@@ -54,9 +54,9 @@ export function entryFor(item: PlanItem, ex: Exercise, workouts: Workout[], reco
   };
 }
 
-/** Plan items of a session plus the add-ons the user enabled (lifting sessions only). */
+/** Plan items of a session plus the add-ons the user enabled (plan lifting sessions only, not extra blocks). */
 export function sessionItems(session: PlanSession, plan: Plan | null, addOns: AddOn[]): PlanItem[] {
-  if (!plan || session.kind !== "lifting") return session.items;
+  if (!plan || session.kind !== "lifting" || session.extra) return session.items;
   const extra = plan.enabledAddOns.flatMap((id) => addOns.find((a) => a.id === id)?.items ?? []);
   return [...session.items, ...extra.filter((x) => !session.items.some((i) => i.exerciseId === x.exerciseId))];
 }
@@ -98,6 +98,7 @@ export function buildWorkout(args: {
     sessionKey: session?.key ?? null,
     sessionName: session?.name ?? "Entrenamiento libre",
     sessionKind: session?.kind ?? "lifting",
+    extra: session?.extra ?? false,
     status: "in_progress",
     startedAt: now,
     endedAt: null,

@@ -7,6 +7,7 @@ import {
   UserCog,
   BarChart3,
   CalendarDays,
+  CalendarRange,
   CloudOff,
   Dumbbell,
   Footprints,
@@ -28,6 +29,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 
 const PRIMARY = [
   { href: "/", label: "Hoy", icon: House },
+  { href: "/semana", label: "Semana", icon: CalendarRange },
   { href: "/entrenar", label: "Entrenar", icon: Dumbbell },
   { href: "/progreso", label: "Progreso", icon: BarChart3 },
   { href: "/coach", label: "Coach", icon: Sparkles },

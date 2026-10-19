@@ -17,16 +17,16 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { useData } from "@/components/providers/DataProvider";
 import { Badge, Button, Card, CardHeader, IconTile, LinkButton, ProgressBar, Ring } from "@/components/ui";
-import { addDays, weekStart } from "@/lib/analytics/dates";
-import { plannedSessionsForWeek, sessionForDate, summarizeAttendance, weeklyAttendance } from "@/lib/analytics/attendance";
+import { weekStart } from "@/lib/analytics/dates";
+import { extrasForDate, sessionForDate, summarizeAttendance, weeklyAttendance } from "@/lib/analytics/attendance";
 import { dailyMeans, movingAverage7d } from "@/lib/analytics/bodyweight";
 import { proteinByDay, proteinTarget } from "@/lib/analytics/nutrition";
-import { workingSets } from "@/lib/analytics/strength";
 import { lastWeekStarts } from "@/lib/analytics/dates";
 import { putDoc, newId } from "@/lib/db/write";
 import { VERDICT_LABEL, WEEKDAY_SHORT, fmtDate, fmtNum } from "@/lib/format";
 import { useToday } from "@/lib/hooks/useToday";
 import { buildWorkout, estimateMinutes, workoutProgress } from "@/lib/workout";
+import { PLACE_LABEL, placeOf, weekActivity, type DayActivity } from "@/lib/week";
 
 export default function TodayPage() {
   const data = useData();
@@ -36,22 +36,17 @@ export default function TodayPage() {
 
   const session = sessionForDate(plan, today);
   const active = workouts.find((w) => w.status === "in_progress");
-  const doneToday = workouts.find((w) => w.status === "completed" && w.date === today);
+  const doneToday = workouts.find((w) => w.status === "completed" && w.date === today && !w.extra);
+  const extrasToday = extrasForDate(plan, today);
   const extraSessions = plan?.sessions.filter((s) => s.optional || s.floating) ?? [];
 
   const week = useMemo(() => {
     const ws = weekStart(today);
     const att = weeklyAttendance({ plan, workouts, weekStarts: lastWeekStarts(today, 8), today, startDate: profile?.startDate });
     const current = att[att.length - 1];
-    const planned = plannedSessionsForWeek(plan, ws);
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const date = addDays(ws, i);
-      const sets = workouts
-        .filter((w) => w.date === date && w.status === "completed")
-        .reduce((t, w) => t + w.entries.reduce((a, e) => a + workingSets(e.sets).length, 0), 0);
-      return { date, sets, planned: planned.some((p) => p.date === date) };
-    });
-    return { current, summary: summarizeAttendance(att), days };
+    const days = weekActivity(plan, workouts, ws);
+    const extras = { planned: days.reduce((t, d) => t + d.extrasPlanned, 0), done: days.reduce((t, d) => t + d.extrasDone, 0) };
+    return { current, summary: summarizeAttendance(att), days, extras };
   }, [plan, workouts, today, profile?.startDate]);
 
   const weight = useMemo(() => {
@@ -171,6 +166,35 @@ export default function TodayPage() {
             </div>
           )}
 
+          {extrasToday.length > 0 && (
+            <div className="mt-4 border-t border-line pt-4">
+              <p className="text-sm font-semibold">También hoy</p>
+              <ul className="mt-2 space-y-2">
+                {extrasToday.map((s) => {
+                  const done = workouts.some((w) => w.status === "completed" && w.date === today && w.sessionKey === s.key);
+                  return (
+                    <li key={s.key} className="flex items-center gap-3 rounded-2xl bg-violet-soft px-3 py-2">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">{s.name}</span>
+                        <span className="block text-xs text-muted">
+                          {PLACE_LABEL[placeOf(s)]} · ~{s.estimatedMinutes} min
+                        </span>
+                      </span>
+                      {done ? (
+                        <Badge tone="primary">
+                          <Check className="size-3.5" /> Hecho
+                        </Badge>
+                      ) : (
+                        <Button size="sm" variant="soft" onClick={() => start(s)} aria-label={`Iniciar ${s.name}`}>
+                          Iniciar
+                        </Button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </Card>
 
         {/* Weekly progress ring */}
@@ -184,6 +208,7 @@ export default function TodayPage() {
               <Legend color="var(--primary)" label="Sesiones" value={`${week.current.attended}/${week.current.planned}`} />
               <Legend color="var(--accent)" label="Proteína hoy" value={target ? `${fmtNum(proteinToday, 0)}/${target} g` : `${fmtNum(proteinToday, 0)} g`} />
               <Legend color="var(--violet)" label="Pasos hoy" value={fmtNum(stepsToday, 0)} />
+              {week.extras.planned > 0 && <Legend color="var(--violet)" label="Bloques extra" value={`${week.extras.done}/${week.extras.planned}`} />}
               <Legend color="var(--amber)" label="Racha" value={`${week.summary.streakWeeks} sem`} />
             </ul>
           </div>
@@ -273,31 +298,59 @@ function Legend({ color, label, value }: { color: string; label: string; value: 
   );
 }
 
-function WeekBars({ days, today }: { days: { date: string; sets: number; planned: boolean }[]; today: string }) {
-  const max = Math.max(20, ...days.map((d) => d.sets));
+function WeekBars({ days, today }: { days: DayActivity[]; today: string }) {
+  const max = Math.max(20, ...days.map((d) => d.sets + d.extraSets));
+  const hasExtras = days.some((d) => d.extrasPlanned > 0 || d.extraSets > 0);
+  const label = days
+    .map((d, i) => `${WEEKDAY_SHORT[i]}: ${d.sets} series de plan${d.extraSets ? `, ${d.extraSets} de bloques extra` : ""}${d.extrasPlanned ? ` (${d.extrasDone}/${d.extrasPlanned} extra hechos)` : ""}`)
+    .join("; ");
   return (
-    <div className="flex h-40 items-end justify-between gap-2" role="img" aria-label="Series por día de esta semana">
-      {days.map((d, i) => {
-        const isToday = d.date === today;
-        const h = d.sets ? Math.max(10, (d.sets / max) * 100) : d.planned ? 10 : 4;
-        return (
-          <div key={d.date} className="flex flex-1 flex-col items-center gap-2">
-            <span className="num text-[0.7rem] font-semibold text-muted">{d.sets || ""}</span>
-            <div className="flex h-28 w-full max-w-10 items-end">
-              <div
-                className={clsx(
-                  "w-full rounded-full transition-[height] duration-500",
-                  d.sets ? (isToday ? "bg-primary" : "bg-primary/55") : d.planned ? "border-2 border-dashed border-primary/40 bg-transparent" : "bg-sunken",
+    <div>
+      <div className="flex h-40 items-end justify-between gap-2" role="img" aria-label={`Series por día de esta semana. ${label}`}>
+        {days.map((d, i) => {
+          const isToday = d.date === today;
+          const total = d.sets + d.extraSets;
+          const h = total ? Math.max(10, (total / max) * 100) : d.planned || d.extrasPlanned ? 10 : 4;
+          return (
+            <div key={d.date} className="flex flex-1 flex-col items-center gap-2">
+              <span className="num text-[0.7rem] font-semibold text-muted">{total || ""}</span>
+              <div className="flex h-28 w-full max-w-10 items-end">
+                {total ? (
+                  // Stacked: plan sessions at the bottom, extra blocks on top.
+                  <div className="flex w-full flex-col-reverse gap-0.5 overflow-hidden rounded-full transition-[height] duration-500" style={{ height: `${h}%` }}>
+                    {d.sets > 0 && <div className={isToday ? "bg-primary" : "bg-primary/55"} style={{ flexGrow: d.sets }} />}
+                    {d.extraSets > 0 && <div className={isToday ? "bg-violet" : "bg-violet/55"} style={{ flexGrow: d.extraSets }} />}
+                  </div>
+                ) : (
+                  <div
+                    className={clsx(
+                      "w-full rounded-full border-2 border-dashed bg-transparent",
+                      d.planned ? "border-primary/40" : d.extrasPlanned ? "border-violet/50" : "border-transparent bg-sunken",
+                    )}
+                    style={{ height: `${h}%` }}
+                  />
                 )}
-                style={{ height: `${h}%` }}
-              />
+              </div>
+              <span className={clsx("flex size-7 items-center justify-center rounded-full text-xs font-bold", isToday ? "bg-primary text-on-primary" : "text-muted")}>
+                {WEEKDAY_SHORT[i]}
+              </span>
             </div>
-            <span className={clsx("flex size-7 items-center justify-center rounded-full text-xs font-bold", isToday ? "bg-primary text-on-primary" : "text-muted")}>
-              {WEEKDAY_SHORT[i]}
-            </span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      {hasExtras && (
+        <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-hidden>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full bg-primary" /> Plan / gimnasio
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full bg-violet" /> Bloques extra (casa, fuera)
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full border-2 border-dashed border-muted" /> Planeado
+          </span>
+        </p>
+      )}
     </div>
   );
 }

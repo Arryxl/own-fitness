@@ -67,6 +67,9 @@ test("registro → onboarding → rutina → entreno offline → informe IA → 
   await expect(recommended.getByText("Full Body ×3")).toBeVisible();
   await recommended.getByRole("button", { name: "Usar esta rutina" }).first().click();
   await page.getByRole("button", { name: "Crear mi plan" }).click();
+  // The app returns to Hoy after saving the plan; reloading before that can lose the write.
+  await expect(page).toHaveURL(/:\d+\/$/);
+  await expect(page.getByText("Hoy toca").or(page.getByText("Hoy no hay gimnasio"))).toBeVisible();
 
   // 4) First workout, logged with the network off.
   await page.goto("/entrenar");

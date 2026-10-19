@@ -1,22 +1,41 @@
 import { z } from "zod";
 import { AI_DEADLINE_MS, MODELS, ai, classify, deadlineSignal, withModelFallback } from "@/lib/ai/client";
-import { AI_FAKE, FAKE_CHAT_REPLY } from "@/lib/ai/fake";
-import { COACH_PROMPT_VERSION } from "@/lib/ai/prompts/coach.v2";
+import { AI_FAKE, FAKE_BLOCK_REPLY, FAKE_CHAT_REPLY, fakeBlockArgs } from "@/lib/ai/fake";
+import { COACH_PROMPT_VERSION } from "@/lib/ai/prompts/coach.v3";
 import { coachPromptFor } from "@/lib/ai/prompts/summary";
 import { recordTokens } from "@/lib/ai/rate-limit";
+import { callArgs, type ToolCall } from "@/lib/ai/toolCalls";
 import { TOOL_LABELS, runTool, toolDeclarations } from "@/lib/ai/tools";
 import { adminDb } from "@/lib/firebase/admin";
+import { WEEKDAY_LONG } from "@/lib/format";
 import { prepareAiRoute, toErrorResponse } from "@/lib/server/aiRoute";
 
 export const maxDuration = 60;
 
 const MAX_TOOL_ROUNDS = 6;
+/** Time left (ms) below which the next call must be the final answer. */
+const FINAL_ANSWER_MS = 12_000;
+
+/** Sent once when the model ends a turn after tools with nothing at all. */
+const FINISH_NUDGE =
+  "[Sistema] Tu último turno terminó sin texto. Si te faltó alguna llamada para completar lo que pidió el usuario, hazla ahora; después respóndele en español resumiendo lo que hiciste o propusiste.";
 const HISTORY_MESSAGES = 12;
 
 const Body = z.object({
   chatId: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/).default("main"),
   message: z.string().trim().min(1).max(2000),
+  /** Where the chat is open; only steers the model, never stored. */
+  screen: z.enum(["semana"]).optional(),
+  focusDay: z.coerce.number().int().min(1).max(7).nullish(),
 });
+
+/** Tools whose success means a new pending proposal for the UI. */
+const PROPOSAL_TOOLS = new Set(["propose_plan_change", "propose_week_block"]);
+
+function screenContext(screen: "semana" | undefined, focusDay: number | null | undefined): string {
+  if (screen !== "semana") return "";
+  return `[Contexto de pantalla: el usuario está en Mi semana${focusDay ? `, mirando el ${WEEKDAY_LONG[focusDay - 1]} (día ${focusDay})` : ""}.]\n`;
+}
 
 type Step = { type: string; [k: string]: unknown };
 
@@ -39,7 +58,7 @@ export async function POST(req: Request) {
   }
   const parsed = Body.safeParse(ctx.body);
   if (!parsed.success) return Response.json({ error: "Mensaje inválido" }, { status: 400 });
-  const { chatId, message } = parsed.data;
+  const { chatId, message, screen, focusDay } = parsed.data;
   const { user, data, today } = ctx;
   const deadline = Date.now() + AI_DEADLINE_MS;
 
@@ -66,20 +85,32 @@ export async function POST(req: Request) {
       let tokens = 0;
       try {
         if (AI_FAKE) {
-          text = FAKE_CHAT_REPLY;
           model = "fake";
+          text = FAKE_CHAT_REPLY;
+          // Lets end-to-end tests drive the real proposal tool without Gemini.
+          if (/abdomen|core/i.test(message)) {
+            toolsUsed.push("propose_week_block");
+            send({ type: "tool", name: "propose_week_block", label: TOOL_LABELS.propose_week_block });
+            const out = (await runTool("propose_week_block", fakeBlockArgs(focusDay ?? 3), { data })) as { ok?: boolean; error?: string };
+            if (out.ok) send({ type: "proposal" });
+            text = out.ok ? FAKE_BLOCK_REPLY : `Error de prueba: ${out.error}`;
+          }
           send({ type: "text", text });
         }
-        let input: Step[] = [...history, { type: "user_input", content: [{ type: "text", text: message }] }];
+        let input: Step[] = [...history, { type: "user_input", content: [{ type: "text", text: screenContext(screen, focusDay) + message }] }];
         let previous: string | undefined;
-        for (let round = 0; round < (AI_FAKE ? 0 : MAX_TOOL_ROUNDS); round++) {
+        let nudged = false;
+        let proposals = 0;
+        for (let round = 0; round <= (AI_FAKE ? -1 : MAX_TOOL_ROUNDS); round++) {
+          // Out of tool rounds or close to the deadline: no more tools, the model answers with what it has.
+          const final = round === MAX_TOOL_ROUNDS || deadline - Date.now() < FINAL_ANSWER_MS;
           const params = {
             system_instruction: system,
             input,
             tools,
             stream: true as const,
             previous_interaction_id: previous,
-            generation_config: { tool_choice: "auto", thinking_level: "low" as const },
+            generation_config: { tool_choice: final ? "none" : "auto", thinking_level: "low" as const },
           };
           // First call may fall back to the backup model; later rounds stay on the same model.
           const events =
@@ -90,7 +121,7 @@ export async function POST(req: Request) {
                 })
               : await ai().interactions.create({ ...params, model } as never, { signal: deadlineSignal(deadline) });
 
-          const calls = new Map<number, { id: string; name: string; args: string }>();
+          const calls = new Map<number, ToolCall>();
           let interactionId: string | undefined;
           let roundText = "";
           for await (const ev of events as unknown as AsyncIterable<StreamEvent>) {
@@ -100,7 +131,7 @@ export async function POST(req: Request) {
                 break;
               case "step.start":
                 if (ev.step?.type === "function_call") {
-                  calls.set(ev.index, { id: ev.step.id, name: ev.step.name, args: ev.step.arguments ? JSON.stringify(ev.step.arguments) : "" });
+                  calls.set(ev.index, { id: ev.step.id, name: ev.step.name, start: ev.step.arguments, delta: "" });
                 }
                 break;
               case "step.delta":
@@ -114,7 +145,7 @@ export async function POST(req: Request) {
                   send({ type: "text", text: ev.delta.text });
                 } else if (ev.delta?.type === "arguments_delta") {
                   const c = calls.get(ev.index);
-                  if (c && typeof ev.delta.arguments === "string") c.args += ev.delta.arguments;
+                  if (c && typeof ev.delta.arguments === "string") c.delta += ev.delta.arguments;
                 }
                 break;
               case "interaction.completed":
@@ -128,34 +159,39 @@ export async function POST(req: Request) {
             }
           }
 
-          if (calls.size === 0 || !interactionId) break;
+          if (calls.size === 0 && !roundText.trim() && round > 0 && interactionId && !nudged && !final) {
+            // Gemini sometimes ends right after tool results with an empty turn (no text, no
+            // calls), leaving the task half done. Ask once to finish and answer.
+            console.warn("chat: empty model turn after tools, asking it to finish");
+            nudged = true;
+            input = [{ type: "user_input", content: [{ type: "text", text: FINISH_NUDGE }] }];
+            previous = interactionId;
+            continue;
+          }
+          if (calls.size === 0 || !interactionId || final) break;
           const results = await Promise.all(
             [...calls.values()].map(async (c) => {
               toolsUsed.push(c.name);
               send({ type: "tool", name: c.name, label: TOOL_LABELS[c.name] ?? c.name });
-              let args: unknown = {};
-              try {
-                args = c.args ? JSON.parse(c.args) : {};
-              } catch {
-                args = {};
+              const out = await runTool(c.name, callArgs(c), { data });
+              if (PROPOSAL_TOOLS.has(c.name) && (out as { ok?: boolean }).ok) {
+                proposals++;
+                send({ type: "proposal" });
               }
-              const out = await runTool(c.name, args, { data });
-              if (c.name === "propose_plan_change" && (out as { ok?: boolean }).ok) send({ type: "proposal" });
               if (c.name === "save_memory" && (out as { ok?: boolean }).ok) send({ type: "memory" });
               return { type: "function_result", name: c.name, call_id: c.id, result: [{ type: "text", text: JSON.stringify(out) }] };
             }),
           );
           input = results;
           previous = interactionId;
-          if (round === MAX_TOOL_ROUNDS - 1) {
-            const note = "\n\n_(Alcancé el máximo de consultas para esta respuesta; pregúntame de nuevo para profundizar.)_";
-            text += note;
-            send({ type: "text", text: note });
-          }
         }
 
         if (!text.trim()) {
-          text = "No pude generar una respuesta. Intenta reformular la pregunta.";
+          console.warn("chat: no text after", toolsUsed.length, "tool calls");
+          // Never leave the user without knowing what was already done.
+          text = proposals
+            ? `Te dejé ${proposals} propuesta${proposals === 1 ? "" : "s"} en pantalla para que la${proposals === 1 ? "" : "s"} revises y apruebes con «Aplicar». No alcancé a redactar la explicación: pregúntame «¿qué me propusiste?» si quieres el detalle.`
+            : "No pude generar una respuesta. Intenta reformular la pregunta.";
           send({ type: "text", text });
         }
         const now = Date.now();

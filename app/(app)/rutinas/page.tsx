@@ -282,7 +282,7 @@ function UseTemplateSheet({ t, advice, onClose }: { t: ProgramTemplate; advice: 
     const plan = planFromTemplate(t, { id, variant, startDate, now: Date.now() });
     putDoc(data.uid, "plans", id, plan);
     patchProfile(data.uid, { activePlanId: id });
-    toast(`Plan «${t.name}» activado. Puedes editarlo en Planes.`, "success");
+    toast(`Plan «${t.name}» activado. Ajústalo día a día en Mi semana.`, "success");
     router.push("/");
   }
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { AI_DEADLINE_MS } from "@/lib/ai/client";
-import { COACH_PROMPT_VERSION } from "@/lib/ai/prompts/coach.v2";
+import { COACH_PROMPT_VERSION } from "@/lib/ai/prompts/coach.v3";
 import { coachPromptFor } from "@/lib/ai/prompts/summary";
 import { WeeklyReportSchema } from "@/lib/ai/schemas";
 import { generateStructured } from "@/lib/ai/structured";

@@ -21,3 +21,23 @@ export function fakeStructured(schema: unknown): unknown {
 }
 
 export const FAKE_CHAT_REPLY = "Respuesta de prueba del coach: revisé tus datos y vas por buen camino. Esto no es consejo médico.";
+
+/** Arguments the fake coach sends to propose_week_block (e2e tests). */
+export function fakeBlockArgs(weekday: number) {
+  return {
+    summary: "Core en casa para complementar tu plan",
+    rationale: "Prueba: el core fortalece y estabiliza; la grasa abdominal baja con déficit calórico, no con abdominales.",
+    name: "Core en casa",
+    focus: "Abdomen y estabilidad",
+    place: "home",
+    kind: "lifting",
+    weekdays: [weekday],
+    minutes: 12,
+    items: [
+      { exerciseId: "dead_bug", sets: 3, repMin: 8, repMax: 12, unit: "reps" },
+      { exerciseId: "plank", sets: 3, repMin: 30, repMax: 45 },
+    ],
+  };
+}
+
+export const FAKE_BLOCK_REPLY = "Respuesta de prueba del coach: te propuse un bloque de core en casa. Apruébalo con «Aplicar». Esto no es consejo médico.";

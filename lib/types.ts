@@ -66,6 +66,9 @@ export interface PersonalRecord {
 
 export type PlanItem = TemplateItem;
 
+/** Where a session or extra block happens. */
+export type BlockPlace = "gym" | "home" | "outdoor";
+
 export interface PlanSession {
   key: string;
   name: string;
@@ -78,6 +81,13 @@ export interface PlanSession {
   notes: string | null;
   estimatedMinutes: number;
   items: PlanItem[];
+  /** Missing on plans created before weekly blocks existed: treated as "gym". */
+  place?: BlockPlace;
+  /**
+   * A block added on top of the plan (core at home, a walk, mobility…) by the
+   * user or an approved coach proposal. It never counts toward attendance.
+   */
+  extra?: boolean;
 }
 
 /** users/{uid}/plans/{id}: an editable copy of a template. */
@@ -132,6 +142,8 @@ export interface Workout {
   sessionKey: string | null;
   sessionName: string;
   sessionKind?: "lifting" | "cardio";
+  /** Logged from an extra block: excluded from attendance. */
+  extra?: boolean;
   status: WorkoutStatus;
   startedAt: number;
   endedAt: number | null;
@@ -288,6 +300,20 @@ export interface Memory {
   status?: "pending" | "saved";
 }
 
+export type ProposalOp =
+  "replace_exercise" | "change_sets" | "change_reps" | "add_exercise" | "remove_exercise" | "move_session" | "remove_session" | "add_block";
+
+/** A new extra block proposed by the coach; one copy is created per weekday. */
+export interface ProposedBlock {
+  name: string;
+  focus: string;
+  place: BlockPlace;
+  kind: "lifting" | "cardio";
+  weekdays: number[];
+  estimatedMinutes: number;
+  items: PlanItem[];
+}
+
 export interface PlanChangeProposal {
   id: string;
   createdAt: number;
@@ -295,11 +321,17 @@ export interface PlanChangeProposal {
   summary: string;
   rationale: string;
   planId: string;
+  /** Empty for add_block. */
   sessionKey: string;
-  op: "replace_exercise" | "change_sets" | "change_reps" | "add_exercise" | "remove_exercise";
+  op: ProposalOp;
   exerciseId?: string | null;
   newExerciseId?: string | null;
   sets?: number | null;
   repMin?: number | null;
   repMax?: number | null;
+  /** add_exercise: unit of the rep range (seconds for a plank, minutes for cardio). */
+  repUnit?: RepUnit | null;
+  /** move_session: the new ISO weekday (null = no fixed day). */
+  weekday?: number | null;
+  block?: ProposedBlock | null;
 }
