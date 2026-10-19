@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, ChevronRight, Plus, Search, Trash2 } from "lucide-r
 import { useMemo, useState } from "react";
 import { useData } from "@/components/providers/DataProvider";
 import { Badge, Button, Field, IconButton, Input, PageHeader, Select, Sheet, TextArea, Toggle, parseNum } from "@/components/ui";
+import { ExerciseDemo, ExerciseThumb } from "@/components/workout/ExerciseDemo";
 import { ExercisePicker } from "@/components/workout/ExercisePicker";
 import { putDoc, removeDoc } from "@/lib/db/write";
 import { createCustomExercise, saveOverride } from "@/lib/db/overrides";
@@ -71,7 +72,8 @@ export default function ExercisesPage() {
           <ul className="glass divide-y divide-line overflow-hidden rounded-[var(--radius-card)]">
             {items.map((e) => (
               <li key={e.id}>
-                <button type="button" onClick={() => setEditing(e)} className="flex min-h-14 w-full items-center gap-2 px-4 py-2 text-left hover:bg-sunken">
+                <button type="button" onClick={() => setEditing(e)} className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left hover:bg-sunken">
+                  <ExerciseThumb exerciseId={e.id} />
                   <span className="min-w-0 flex-1">
                     <span className={`block font-semibold ${e.available ? "" : "text-muted line-through"}`}>{e.name}</span>
                     <span className="block text-xs text-muted">
@@ -156,6 +158,7 @@ function ExerciseEditor({ initial, onClose }: { initial: Exercise; onClose: () =
       }
     >
       <div className="space-y-4">
+        {!isNew && <ExerciseDemo exerciseId={d.id} name={d.name} />}
         {!custom && d.overridden && (
           <Button
             size="sm"

@@ -19,6 +19,7 @@ import type { ExerciseSession } from "@/lib/analytics/strength";
 import { formatWeight, fromKg, round, toKg } from "@/lib/analytics/units";
 import { REASON_LABEL } from "@/lib/format";
 import type { Exercise, PlanItem, WeightUnit, WorkoutEntry, WorkoutSet } from "@/lib/types";
+import { ExerciseDemo } from "./ExerciseDemo";
 
 function shownValue(s: WorkoutSet, unit: WeightUnit): string {
   if (s.enteredValue != null && s.enteredUnit === unit) return String(s.enteredValue);
@@ -165,6 +166,7 @@ export function ExerciseCard({
           )}
           {item?.notes && <p className="rounded-2xl bg-sunken px-3 py-2 text-xs">📌 {item.notes}</p>}
           {item?.supersetGroup && <p className="text-xs text-muted">Superserie opcional: alterna con el otro ejercicio de la letra {item.supersetGroup} para ahorrar tiempo.</p>}
+          <ExerciseDemo exerciseId={exercise.id} name={exercise.name} className="max-w-xs" />
           {exercise.cues && <p className="text-xs text-muted">💡 {exercise.cues}</p>}
 
           {!unloaded && (

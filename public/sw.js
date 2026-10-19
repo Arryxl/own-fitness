@@ -2,13 +2,16 @@
  * Data offline is handled by Firestore's IndexedDB cache, not here.
  *  - HTML / RSC navigations: network-first, fall back to cache.
  *  - /_next/static (content-hashed): cache-first.
+ *  - /exercises/*.jpg (demo photos): cache-first in their own cache, as they are viewed.
  *  - /api/* and cross-origin requests (Firestore, Google): never cached.
  */
-const VERSION = "v2";
+const VERSION = "v3";
 const PAGES = `ironlog-pages-${VERSION}`;
 const STATIC = `ironlog-static-${VERSION}`;
-const ROUTES = ["/", "/entrenar", "/progreso", "/coach", "/mas", "/rutinas", "/medidas", "/actividad", "/nutricion", "/ejercicios", "/planes", "/marcas", "/historial", "/ajustes", "/login", "/privacidad"];
+const MEDIA = `ironlog-media-${VERSION}`;
+const ROUTES = ["/", "/semana", "/entrenar", "/progreso", "/coach", "/mas", "/rutinas", "/medidas", "/actividad", "/nutricion", "/ejercicios", "/planes", "/marcas", "/historial", "/ajustes", "/login", "/privacidad"];
 const MAX_STATIC = 400;
+const MAX_MEDIA = 300;
 
 async function precache() {
   const pages = await caches.open(PAGES);
@@ -38,7 +41,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("ironlog-") && ![PAGES, STATIC].includes(k)).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("ironlog-") && ![PAGES, STATIC, MEDIA].includes(k)).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -62,14 +65,14 @@ async function networkFirst(request, cacheKey) {
   }
 }
 
-async function cacheFirst(request) {
-  const cache = await caches.open(STATIC);
+async function cacheFirst(request, cacheName = STATIC, max = MAX_STATIC) {
+  const cache = await caches.open(cacheName);
   const hit = await cache.match(request);
   if (hit) return hit;
   const res = await fetch(request);
   if (res.ok) {
     cache.put(request, res.clone());
-    trim(STATIC, MAX_STATIC);
+    trim(cacheName, max);
   }
   return res;
 }
@@ -83,6 +86,10 @@ self.addEventListener("fetch", (event) => {
 
   if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
     event.respondWith(cacheFirst(request));
+    return;
+  }
+  if (url.pathname.startsWith("/exercises/")) {
+    event.respondWith(cacheFirst(request, MEDIA, MAX_MEDIA));
     return;
   }
   const isRsc = request.headers.get("RSC") === "1" || url.searchParams.has("_rsc");
