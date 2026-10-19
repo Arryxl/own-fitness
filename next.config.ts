@@ -37,7 +37,9 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      { source: "/(.*)", headers: securityHeaders },
+      // Not on /__/*: the Firebase auth iframe is embedded by our own pages, and
+      // X-Frame-Options DENY there stalls sign-in (mobile browsers wait on it).
+      { source: "/:path((?!__/).*)", headers: securityHeaders },
       {
         source: "/sw.js",
         headers: [
